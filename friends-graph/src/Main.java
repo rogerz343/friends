@@ -10,8 +10,7 @@ import java.awt.Robot;
 public class Main {
     // TODO: add a GUI
     public static void main(String[] args) throws AWTException {
-        // testRobot();
-        //harvest();
+        harvest();
     }
 
     public static void harvest() throws AWTException {
@@ -25,7 +24,9 @@ public class Main {
         h.harvest();
     }
 
-    // TODO: There is currently a bug with JDK 8 Robot class. Remove this when it is fixed.
+    // TODO: There is currently a bug with JDK 8 Robot class. Particularly, on 
+    // Windows 10 when the display is scaled to a value other than default (125%
+    // on most laptops, 100% on most desktops).
     private static void testRobot() throws AWTException {
         Robot r = new Robot();
         r.setAutoWaitForIdle(true);

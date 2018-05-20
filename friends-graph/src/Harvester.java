@@ -8,25 +8,15 @@ import java.awt.event.KeyEvent;
 
 /**
  * A class used to download html documents corresponding to a facebook user's "Friends" page,
- * with all of the html elements loaded.
+ * with all of the html elements loaded. The class simply uses Java's Robot class to automate
+ * the task and can be terminated by moving the mouse/cursor manually.
  * @author roger
- * Assumptions made before executing code:
- * - FRIENDS_BUTTON_COLOR is correct
- * - the display is a 1920 x 1080, running windows with 100% scaling
- * - the windows taskbar is at the default height
- * - chrome is maximized on the screen
- * - chrome's bookmark bar is open
- * - chrome's zoom level is default (100%)
- * - chrome's downloads bar (at the bottom of the page) is OPEN
- * - chrome's developer tools panel is CLOSED
- * - the current page is the main page of a facebook profile, scrolled all the way to the top
- * - the facebook chat panel (on the right hand side) is open, default size
  */
 public class Harvester {
     
     private InterruptibleRobot robot;
     
-    private static int FRIENDS_X = 735; // 842; // 735;
+    private static int FRIENDS_X = 735; // 842;
     private static int FRIENDS_Y_COVER = 460;
     private static int FRIENDS_Y_NO_COVER = 360;
     private static Color FRIENDS_BUTTON_COLOR = new Color(255, 255, 255);
@@ -47,8 +37,18 @@ public class Harvester {
     
     // TODO: add error checking
     /**
-     * Downloads the html document of a facebook user's "Friends" page. See class documentation
-     * for more detail.
+     * Downloads the html document of a facebook user's "Friends" page. Has several
+     * assumptions in order to operate correctly:
+     * - FRIENDS_BUTTON_COLOR is correct
+     * - the display is a 1920 x 1080, running windows with 100% scaling
+     * - the windows taskbar is at the default height
+     * - chrome is maximized on the screen
+     * - chrome's bookmark bar is open
+     * - chrome's zoom level is default (100%)
+     * - chrome's downloads bar (at the bottom of the page) is OPEN
+     * - chrome's developer tools panel is CLOSED
+     * - the current page is the main page of a facebook profile, scrolled all the way to the top
+     * - the facebook chat panel (on the right hand side) is open, default size
      */
     public void harvest() {
         viewFriendsPage();
@@ -73,9 +73,8 @@ public class Harvester {
         if (robot.interrupted) { return 2; } 
         robot.mouseMove(0, 0);
         Color sample = robot.getPixelColor(FRIENDS_X, FRIENDS_Y_NO_COVER);
-        if (false) {
-//        if (sample.equals(FRIENDS_BUTTON_COLOR)) {
-//            robot.mouseMove(FRIENDS_X, FRIENDS_Y_NO_COVER);
+        if (sample.equals(FRIENDS_BUTTON_COLOR)) {
+            robot.mouseMove(FRIENDS_X, FRIENDS_Y_NO_COVER);
         } else {
             sample = robot.getPixelColor(FRIENDS_X, FRIENDS_Y_COVER);
             if (sample.equals(FRIENDS_BUTTON_COLOR)) {
@@ -97,7 +96,7 @@ public class Harvester {
         robot.mouseMove(0, 0);
         boolean done = false;
         while (!done) {
-            if (robot.interrupted) { return 1; }
+            
             robot.keyPress(KeyEvent.VK_PAGE_DOWN);
             robot.keyRelease(KeyEvent.VK_PAGE_DOWN);
             robot.keyPress(KeyEvent.VK_PAGE_DOWN);
@@ -135,19 +134,18 @@ public class Harvester {
      * @return 0 if no error occurred. 1 otherwise.
      */
     private int fetchHtml() {
-        if (robot.interrupted) { return 1; } 
+         
         robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
         robot.mousePress(InputEvent.BUTTON2_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON2_DOWN_MASK);
         
-        if (robot.interrupted) { return 1; }
         robot.keyPress(KeyEvent.VK_CONTROL);
         robot.keyPress(KeyEvent.VK_S);
         robot.keyRelease(KeyEvent.VK_S);
         robot.keyRelease(KeyEvent.VK_CONTROL);
         
         // change the name of the file just in case, to avoid overriding message
-        if (robot.interrupted) { return 1; }
+        
         robot.keyPress(KeyEvent.VK_HOME);
         robot.keyRelease(KeyEvent.VK_HOME);
         typeRandomDigit();
@@ -156,7 +154,6 @@ public class Harvester {
         typeRandomDigit();
         typeRandomDigit();
         
-        if (robot.interrupted) { return 1; }
         robot.keyPress(KeyEvent.VK_TAB);
         robot.keyRelease(KeyEvent.VK_TAB);
         robot.keyPress(KeyEvent.VK_DOWN);
@@ -170,6 +167,9 @@ public class Harvester {
         return 0;
     }
     
+    /**
+     * Types a digit at random.
+     */
     private void typeRandomDigit() {
         int random = (int) (Math.random() * 10);
         int code = KeyEvent.VK_0;
@@ -186,48 +186,5 @@ public class Harvester {
         else { System.out.println("Math is broken"); }
         robot.keyPress(code);
         robot.keyRelease(code);
-    }
-    
-    /**
-     * A java Robot that monitors whether it has been interrupted by user input.
-     * @author roger
-     *
-     */
-    private class InterruptibleRobot extends Robot {
-        
-        private int lastXMove;
-        private int lastYMove;
-        public boolean interrupted;
-
-        public InterruptibleRobot() throws AWTException {
-            super();
-            lastXMove = -1;
-            lastYMove = -1;
-            interrupted = false;
-        }
-        
-        public void mouseMove(int x, int y) {
-            checkInterrupt();
-            super.mouseMove(x, y);
-            lastXMove = x;
-            lastYMove = y;
-        }
-        
-        public void keyPress(int keycode) {
-            checkInterrupt();
-            super.keyPress(keycode);
-        }
-        
-        /**
-         * Checks if the user (or any other program) has interrupted the robot by checking
-         * if the mouse cursor is still in the same position that it was last mouseMove'ed to.
-         * If interrupted, the instance variable `interrupted` is set to true.
-         */
-        private void checkInterrupt() {
-            if (lastXMove == -1 || lastYMove == -1) { return; }
-            Point curr = MouseInfo.getPointerInfo().getLocation();
-            interrupted = curr.x != lastXMove || curr.y != lastYMove;
-        }
-        
     }
 }

@@ -10,10 +10,10 @@ import java.awt.Robot;
 public class Main {
     // TODO: add a GUI
     public static void main(String[] args) throws AWTException {
-    	testRobot();
+        // testRobot();
         //harvest();
     }
-    
+
     public static void harvest() throws AWTException {
         // give the user some time to set up the facebook page correctly
         try {
@@ -24,10 +24,10 @@ public class Main {
         Harvester h = new Harvester();
         h.harvest();
     }
-    
+
     // TODO: There is currently a bug with JDK 8 Robot class. Remove this when it is fixed.
     private static void testRobot() throws AWTException {
-    	Robot r = new Robot();
+        Robot r = new Robot();
         r.setAutoWaitForIdle(true);
         r.setAutoDelay(100);
         r.mouseMove(735, 360);

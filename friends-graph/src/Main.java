@@ -1,4 +1,5 @@
 import java.awt.AWTException;
+import java.awt.Robot;
 
 /**
  * friends
@@ -9,7 +10,11 @@ import java.awt.AWTException;
 public class Main {
     // TODO: add a GUI
     public static void main(String[] args) throws AWTException {
-        harvest();
+        Robot r = new Robot();
+        r.setAutoWaitForIdle(true);
+        r.setAutoDelay(100);
+        r.mouseMove(735, 360);
+        //harvest();
     }
     
     public static void harvest() throws AWTException {

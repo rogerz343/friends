@@ -20,12 +20,13 @@ import java.awt.event.KeyEvent;
  * - chrome's downloads bar (at the bottom of the page) is OPEN
  * - chrome's developer tools panel is CLOSED
  * - the current page is the main page of a facebook profile, scrolled all the way to the top
+ * - the facebook chat panel (on the right hand side) is open, default size
  */
 public class Harvester {
     
     private InterruptibleRobot robot;
     
-    private static int FRIENDS_X = 842; // 735;
+    private static int FRIENDS_X = 735; // 842; // 735;
     private static int FRIENDS_Y_COVER = 460;
     private static int FRIENDS_Y_NO_COVER = 360;
     private static Color FRIENDS_BUTTON_COLOR = new Color(255, 255, 255);
@@ -72,8 +73,9 @@ public class Harvester {
         if (robot.interrupted) { return 2; } 
         robot.mouseMove(0, 0);
         Color sample = robot.getPixelColor(FRIENDS_X, FRIENDS_Y_NO_COVER);
-        if (sample.equals(FRIENDS_BUTTON_COLOR)) {
-            robot.mouseMove(FRIENDS_X, FRIENDS_Y_NO_COVER);
+        if (false) {
+//        if (sample.equals(FRIENDS_BUTTON_COLOR)) {
+//            robot.mouseMove(FRIENDS_X, FRIENDS_Y_NO_COVER);
         } else {
             sample = robot.getPixelColor(FRIENDS_X, FRIENDS_Y_COVER);
             if (sample.equals(FRIENDS_BUTTON_COLOR)) {

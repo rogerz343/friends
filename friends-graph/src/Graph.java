@@ -1,7 +1,10 @@
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A representation of an undirected graph with nodes of type V
@@ -12,6 +15,9 @@ import java.util.Map;
 public class Graph<V> {
     
     private Map<V, List<V>> adjList;
+    
+    // global variables used for cliques algorithm
+    private List<List<V>> maximalCliques = null;
     
     /**
      * Creates an empty graph (with zero nodes and zero edges)
@@ -44,4 +50,98 @@ public class Graph<V> {
         }
     }
     
+    /**
+     * Finds all maximal cliques in the graph
+     * @return A list of maximal cliques in the graph, where each clique is represented
+     * as a list of `Person`s.
+     * This method uses the Bron-Kerbosch algorithm with vertex ordering and pivoting.
+     */
+    public List<List<V>> findCliques() {
+        maximalCliques = new ArrayList<>();
+        BronKerboschVertexOrdering();
+        List<List<V>> ans = new ArrayList<>();
+        for (List<V> clique : maximalCliques) {
+            ans.add(new ArrayList<>(clique));
+        }
+        return ans;
+    }
+    
+    /**
+     * Finds the maximum cliques in the graph `adjList`
+     * @param R Parameter for the Bron Kerbosh algorithm
+     * @param P Parameter for the Bron Kerbosh algorithm
+     * @param X Parameter for the Bron Kerbosh algorithm
+     * This method implements the BronKerbosh2 algorithm given at
+     * <https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm>
+     */
+    private void BronKerboschPivoting(Set<V> R, Set<V> P, Set<V> X) {
+        if (P.isEmpty() && X.isEmpty()) {
+            maximalCliques.add(new ArrayList<>(R));
+        }
+        V pivot;
+        if (!P.isEmpty()) {
+            pivot = P.iterator().next();
+        } else {
+            pivot = X.iterator().next();
+        }
+        Set<V> pivotNeighbors = new HashSet<>(adjList.get(pivot));
+        for (V v : P) {
+            if (pivotNeighbors.contains(v)) { continue; }
+            
+            R.add(v);
+            Set<V> vNeighbors = new HashSet<>(adjList.get(v));
+            Set<V> PPrime = new HashSet<>(P);
+            PPrime.retainAll(vNeighbors);
+            Set<V> XPrime = new HashSet<>(X);
+            XPrime.retainAll(vNeighbors);
+            
+            BronKerboschPivoting(R, PPrime, XPrime);
+            R.remove(v);
+            P.remove(v);
+            X.add(v);
+        }
+    }
+    
+    /**
+     * Finds the maximum cliques in the graph `adjList`
+     * @param R Parameter for the Bron Kerbosh algorithm
+     * @param P Parameter for the Bron Kerbosh algorithm
+     * @param X Parameter for the Bron Kerbosh algorithm
+     * This method implements the BronKerbosh3 algorithm given at
+     * <https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm>
+     */
+    private void BronKerboschVertexOrdering() {
+        Set<V> P = adjList.keySet();
+        Set<V> R = new HashSet<>();
+        Set<V> X = new HashSet<>();
+        List<NodeIntPair> degeneracyOrdering = new ArrayList<>();
+        for (Map.Entry<V, List<V>> e : adjList.entrySet()) {
+            degeneracyOrdering.add(new NodeIntPair(e.getKey(), e.getValue().size()));
+        }
+        degeneracyOrdering.sort((p1, p2) -> p1.val - p2.val);
+        for (NodeIntPair p : degeneracyOrdering) {
+            V v = p.node;
+            
+            R.add(v);
+            Set<V> vNeighbors = new HashSet<>(adjList.get(v));
+            Set<V> PPrime = new HashSet<>(P);
+            PPrime.retainAll(vNeighbors);
+            Set<V> XPrime = new HashSet<>(X);
+            XPrime.retainAll(vNeighbors);
+            
+            BronKerboschPivoting(R, PPrime, XPrime);
+            R.remove(v);
+            P.remove(v);
+            X.add(v);
+        }
+    }
+    
+    private class NodeIntPair {
+        public V node;
+        public int val;
+        public NodeIntPair(V node, int val) {
+            this.node = node;
+            this.val = val;
+        }
+    }
 }

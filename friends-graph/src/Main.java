@@ -10,7 +10,9 @@ import java.awt.Robot;
 public class Main {
     // TODO: add a GUI
     public static void main(String[] args) throws AWTException {
-        harvest();
+        // harvest();
+        List<Integer> nodes = new ArrayList<>();
+        List<Integer[]> edges = new ArrayList<>();
     }
 
     public static void harvest() throws AWTException {

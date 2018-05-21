@@ -72,7 +72,6 @@ public class InterruptibleRobot extends Robot {
      * @return the value of `interrupted`
      */
     private boolean checkInterrupt() {
-    	if (1 == 1) { return false; }
         if (interrupted || lastXMove == -1 || lastYMove == -1) { return interrupted; }
         Point curr = MouseInfo.getPointerInfo().getLocation();
         interrupted = Math.abs(curr.x - lastXMove) > 3

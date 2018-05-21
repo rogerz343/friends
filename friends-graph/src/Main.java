@@ -14,10 +14,10 @@ public class Main {
     // TODO: add a GUI
     public static void main(String[] args) throws AWTException {
 //        harvest();
-    	String path = "C:\\Users\\roger\\Downloads\\27747Christopher Ye.html";
+    	String path = "D:\\Robin Zhang\\Downloads\\32829Roger Zhang.html";
     	List<Person> list = FriendsParser.extractFriendsInfo(path);
     	for (Person p : list) {
-    		System.out.print(p.toString());
+    		System.out.println(p.toString());
     	}
     }
 
@@ -34,7 +34,7 @@ public class Main {
 
     // TODO: There is a bug with JDK 8 Robot class. Particularly, on 
     // Windows 10 when the display is scaled to a value other than default (125%
-    // on most laptops, 100% on most desktops).
+    // on most laptops, 100% on most desktops.
     private static void testRobot() throws AWTException {
         Robot r = new Robot();
         r.setAutoWaitForIdle(true);

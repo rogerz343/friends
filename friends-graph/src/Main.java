@@ -13,12 +13,15 @@ import java.util.List;
 public class Main {
     // TODO: add a GUI
     public static void main(String[] args) throws AWTException {
-//        harvest();
-    	String path = "D:\\Robin Zhang\\Downloads\\32829Roger Zhang.html";
-    	List<Person> list = FriendsParser.extractFriendsInfo(path);
-    	for (Person p : list) {
-    		System.out.println(p.toString());
-    	}
+    	String DOWNLOADS_DIR = "D:\\Robin Zhang\\Downloads\\";
+    	String OUTPUT_DIR = "D:\\Robin Zhang\\Desktop\\save\\";
+    	try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    	Harvester h = new Harvester();
+    	h.harvestAllPages(2000, DOWNLOADS_DIR, OUTPUT_DIR);
     }
 
     public static void harvest() throws AWTException {
@@ -29,6 +32,6 @@ public class Main {
             e.printStackTrace();
         }
         Harvester h = new Harvester();
-        h.harvest();
+        h.harvestSingleFriendsPage();
     }
 }

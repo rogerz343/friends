@@ -67,7 +67,7 @@ public class Harvester {
      * Assumes that the current page is the main page for a specific person
      * and navigates to friends page
      * @return 0 if no error occurred. 1 if could not locate friends page button.
-     * 2 if other error occured.
+     * 2 if other error occurred.
      */
     private int viewFriendsPage() {
         if (robot.interrupted) { return 2; } 
@@ -89,14 +89,15 @@ public class Harvester {
     }
     
     /**
-     * Scrolls the page to the bottom.
+     * Scrolls the page to the bottom. May occasionally not make it all the way
+     * to the bottom (ex: in a dynamically loading webpage that takes too long to load
+     * new data)
      * @return 0 if no error occurred. 1 otherwise.
      */
     private int scrollToBottom() {
         robot.mouseMove(0, 0);
         boolean done = false;
         while (!done) {
-            
             robot.keyPress(KeyEvent.VK_PAGE_DOWN);
             robot.keyRelease(KeyEvent.VK_PAGE_DOWN);
             robot.keyPress(KeyEvent.VK_PAGE_DOWN);
@@ -104,7 +105,7 @@ public class Harvester {
             robot.keyPress(KeyEvent.VK_PAGE_DOWN);
             robot.keyRelease(KeyEvent.VK_PAGE_DOWN);
             try {
-                Thread.sleep(1000);
+                Thread.sleep(700);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -112,7 +113,7 @@ public class Harvester {
             if (sample.equals(SCROLLBAR_BOTTOM)) {
                 // double check
                 try {
-                    Thread.sleep(3000);
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

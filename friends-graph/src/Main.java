@@ -13,7 +13,7 @@ import java.util.List;
 public class Main {
     // TODO: add a GUI
     public static void main(String[] args) throws AWTException {
-        // harvest();
+        harvest();
     }
 
     public static void harvest() throws AWTException {

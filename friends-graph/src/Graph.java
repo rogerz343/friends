@@ -37,8 +37,7 @@ public class Graph<V> {
         }
         for (V[] e : edges) {
             if (e.length != 2) {
-                System.out.println("Bad input to Graph constructor");
-                continue;
+                throw new IllegalArgumentException("Bad input to Graph constructor");
             }
             if (!adjList.containsKey(e[0])) { adjList.put(e[0], new ArrayList<>()); }
             if (!adjList.containsKey(e[1])) { adjList.put(e[1], new ArrayList<>()); }

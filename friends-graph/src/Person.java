@@ -8,10 +8,12 @@ public class Person {
     
     public final String id;
     public final String name;
+    public final String url;
     
-    public Person(String id, String name) {
+    public Person(String id, String name, String url) {
         this.id = id;
         this.name = name;
+        this.url = url;
     }
 
     @Override

@@ -24,6 +24,7 @@ public class FriendsParser {
     private static char SUCCEEDS_OWNER_ID = '/';
     
     // tags that indicate that we are about to read a friend's information
+    // IMPORTANT: DIV_TAG2 will not appear if the profile block corresponds to yourself (whoever is logged in)
     private static String LI_TAG = "<li class=\"_698\">";
     private static String DIV_TAG1 = "<div class=\"clearfix _5qo4\" data-testid=\"friend_list_item\">";
     private static String DIV_TAG2 = "<div class=\"uiProfileBlockContent\">";
@@ -118,8 +119,11 @@ public class FriendsParser {
             if (!success && !isEOF(br)) { return null; }
             success = findString(br, DIV_TAG1);
             if (!success && !isEOF(br)) { return null; }
+            
+            // DIV_TAG2 will not appear if the profile block corresponds to the user who is
+            // logged in to facebook himself/herself. Thus, just skip this block.
             success = findString(br, DIV_TAG2);
-            if (!success && !isEOF(br)) { return null; }
+            if (!success && !isEOF(br)) { continue; }
             success = findString(br, PRECEDES_URL);
             if (!success && !isEOF(br)) { return null; }
             

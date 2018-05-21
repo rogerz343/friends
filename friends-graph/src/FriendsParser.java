@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -78,7 +77,7 @@ public class FriendsParser {
     /**
      * Returns a list of the input person's friends, where the first element in the list is
      * the input person him/herself.
-     * @param filepath The path to the person's facebook friends html page.
+     * @param filepath The path to the person's facebook friends html file.
      * @return A list of the input profile's friends. Returns null if an error occurred.
      * Assumes that html document and people's names are well-formed (i.e. names don't
      * contain strange characters such as "<", ">", "\"".

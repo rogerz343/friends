@@ -1,9 +1,7 @@
 import java.awt.AWTException;
 import java.awt.MouseInfo;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.Robot;
-import java.awt.image.BufferedImage;
 
 /**
  * A java Robot that monitors whether it has been interrupted by user input. An

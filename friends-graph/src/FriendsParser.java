@@ -86,20 +86,17 @@ public class FriendsParser {
             if (isEOF(br)) { break; }
             
             String friendUrl = readUntil(br, SUCCEEDS_URL);
-            if (friendUrl == null) { System.out.println("444");return null; }
-            System.out.println(friendUrl);
+            if (friendUrl == null) { return null; }
             friendUrl = getBaseUrl(friendUrl);
-            System.out.println(friendUrl);
             String[] friendUrlComponents = friendUrl.split("/");
             String friendId = friendUrlComponents[friendUrlComponents.length - 1];
             
             success = findString(br, PRECEDES_NAME);
-            if (!success && !isEOF(br)) { System.out.println("555");return null; }
+            if (!success && !isEOF(br)) { return null; }
             
             String friendName = readUntil(br, SUCCEEDS_NAME);
-            if (friendName == null) { System.out.println("777");return null; }
+            if (friendName == null) { return null; }
             result.add(new Person(friendId, friendName, friendUrl));
-            System.out.println(result.size());
         }
         
         try {

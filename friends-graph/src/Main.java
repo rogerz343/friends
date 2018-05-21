@@ -31,14 +31,4 @@ public class Main {
         Harvester h = new Harvester();
         h.harvest();
     }
-
-    // TODO: There is a bug with JDK 8 Robot class. Particularly, on 
-    // Windows 10 when the display is scaled to a value other than default (125%
-    // on most laptops, 100% on most desktops.
-    private static void testRobot() throws AWTException {
-        Robot r = new Robot();
-        r.setAutoWaitForIdle(true);
-        r.setAutoDelay(100);
-        r.mouseMove(735, 360);
-    }
 }

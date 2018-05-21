@@ -4,6 +4,9 @@ A program that fetches lets you fetch and analyze information about your faceboo
 ## Usage
 [include stuff about how to use this later]
 
+## Compatibility
+The program (currently) only runs correctly on Windows 10. Note that there could possibly be a bug with the `java.awt.Robot` class when running on Windows 10 when the display scaling is not at its default value (100% for most desktops and 125% for most laptops).
+
 ## Files
 - `Person.java`: A class that stores various information about a person, such as `id`, `name`, and `url`. `Person`s are equal when their `id`'s are equal.
 - `Graph.java`: A class that represents an undirected graph. Its methods include various graph operations and algorithms.

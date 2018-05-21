@@ -70,14 +70,20 @@ public class FriendsParser {
         // add the rest of the friends
         boolean success = true;
         while (!isEOF(br)) {
+        	// logic on error checking: if the tag isn't found, then either we hit the EOF
+        	// (which is fine) or something actually went wrong (not fine, so return null)
             success = findString(br, LI_TAG);
-            if (!success && !isEOF(br)) { break; }
+            if (!success && !isEOF(br)) { return null; }
             success = findString(br, DIV_TAG1);
-            if (!success && !isEOF(br)) { System.out.println("111");return null; }
+            if (!success && !isEOF(br)) { return null; }
             success = findString(br, DIV_TAG2);
-            if (!success && !isEOF(br)) { System.out.println("222");return null; }
+            if (!success && !isEOF(br)) { return null; }
             success = findString(br, PRECEDES_URL);
-            if (!success && !isEOF(br)) { System.out.println("333");return null; }
+            if (!success && !isEOF(br)) { return null; }
+            
+            // must return here if EOF (otherwise, not EOF means we are currently reading
+            // a valid friend "block"
+            if (isEOF(br)) { break; }
             
             String friendUrl = readUntil(br, SUCCEEDS_URL);
             if (friendUrl == null) { System.out.println("444");return null; }
@@ -94,7 +100,6 @@ public class FriendsParser {
             if (friendName == null) { System.out.println("777");return null; }
             result.add(new Person(friendId, friendName, friendUrl));
             System.out.println(result.size());
-            System.out.println(isEOF(br));
         }
         
         try {

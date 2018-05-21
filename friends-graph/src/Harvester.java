@@ -53,13 +53,17 @@ public class Harvester {
      * files corresponding to a Person and their friends (using FriendsParser.saveToFile)
      * @param maxNumPeople The maximum number of people to download pages from. Cannot be
      * larger than 10000000.
+     * @param maxPerPerson The maximum number of friends extracted from each person's friends page.
+     * For example, if this is set to 200, then each person will have 200 friends. Note that
+     * facebook seems to already sort friends by some measure of "closeness" or "interaction", so
+     * this will gather the `maxPerPerson` "best" friends, which is beneficial in some cases.
      * @param downloadsDir The filesystem path to the default chrome download directory
      * @param outputDir The filesystem path to a directory where the output files (lists
      * of a user and his or her friends) will be saved.
      * @return true if no error occurred, false otherwise.
      * 
      */
-    public boolean harvestAllPages(int maxNumPeople, String downloadsDir, String outputDir) {
+    public boolean harvestAllPages(int maxNumPeople, int maxPerPerson, String downloadsDir, String outputDir) {
         int timeout = 180;
         
         // first, download the information from the source (usually your own fb page)

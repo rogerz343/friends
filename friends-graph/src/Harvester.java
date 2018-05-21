@@ -37,16 +37,14 @@ public class Harvester {
     /**
      * Downloads the html document of a facebook user's "Friends" page. Has several
      * assumptions in order to operate correctly:
-     * - FRIENDS_BUTTON_COLOR is correct
      * - the display is a 1920 x 1080, running windows with 100% scaling
      * - the windows taskbar is at the default height
      * - chrome is maximized on the screen
-     * - chrome's bookmark bar is open
+     * - chrome's bookmark bar is visible
      * - chrome's zoom level is default (100%)
      * - chrome's downloads bar (at the bottom of the page) is OPEN
      * - chrome's developer tools panel is CLOSED
-     * - the current page is the main page of a facebook profile, scrolled all the way to the top
-     * - the facebook chat panel (on the right hand side) is open, default size
+     * - the current page is the main page of a facebook profile
      */
     public void harvest() {
         viewFriendsPage();

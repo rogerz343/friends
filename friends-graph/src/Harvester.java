@@ -1,10 +1,15 @@
 import java.awt.AWTException;
 import java.awt.Color;
+import java.awt.HeadlessException;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 
 /**
  * A class used to download html documents corresponding to a facebook user's "Friends" page,
@@ -70,22 +75,61 @@ public class Harvester {
      * 2 if other error occurred.
      */
     private int viewFriendsPage() {
-        if (robot.interrupted) { return 2; } 
-        robot.mouseMove(0, 0);
-        Color sample = robot.getPixelColor(FRIENDS_X, FRIENDS_Y_NO_COVER);
-        if (sample.equals(FRIENDS_BUTTON_COLOR)) {
-            robot.mouseMove(FRIENDS_X, FRIENDS_Y_NO_COVER);
-        } else {
-            sample = robot.getPixelColor(FRIENDS_X, FRIENDS_Y_COVER);
-            if (sample.equals(FRIENDS_BUTTON_COLOR)) {
-                robot.mouseMove(FRIENDS_X, FRIENDS_Y_NO_COVER);
-            } else {
-                return 1;
-            }
-        }
+        if (robot.interrupted) { return 2; }
+        robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        return 0;
+        
+        robot.keyPress(KeyEvent.VK_CONTROL);
+        robot.keyPress(KeyEvent.VK_L);
+        robot.keyRelease(KeyEvent.VK_L);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
+        
+        robot.keyPress(KeyEvent.VK_CONTROL);
+        robot.keyPress(KeyEvent.VK_C);
+        robot.keyRelease(KeyEvent.VK_C);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return 2;
+        }
+        
+        String url = null;
+        try {
+            url = (String) Toolkit.getDefaultToolkit()
+                    .getSystemClipboard().getData(DataFlavor.stringFlavor);
+        } catch (HeadlessException | UnsupportedFlavorException | IOException e) {
+            e.printStackTrace();
+            return 2;
+        }
+        if (url == null) { return 2; }
+        
+        // turns "https://www.facebook.com/john.smith.35?fref=pb&hc_location=friends_tab"
+        // to "https://www.facebook.com/john.smith.35"
+        // Note: does NOT work if not on main page:
+        //   ex: "https://www.facebook.com/john.smith.35/friends?lst=1000017..."
+        //   will become "https://www.facebook.com/john.smith.35/friends"
+        String baseUrlNoSlash = url.split("[\\?#]")[0];
+        
+        
+//        // DEPRECATED: VERY INEFFICIENT
+//        robot.mouseMove(0, 0);
+//        Color sample = robot.getPixelColor(FRIENDS_X, FRIENDS_Y_NO_COVER);
+//        if (sample.equals(FRIENDS_BUTTON_COLOR)) {
+//            robot.mouseMove(FRIENDS_X, FRIENDS_Y_NO_COVER);
+//        } else {
+//            sample = robot.getPixelColor(FRIENDS_X, FRIENDS_Y_COVER);
+//            if (sample.equals(FRIENDS_BUTTON_COLOR)) {
+//                robot.mouseMove(FRIENDS_X, FRIENDS_Y_NO_COVER);
+//            } else {
+//                return 1;
+//            }
+//        }
+//        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+//        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+//        return 0;
     }
     
     /**

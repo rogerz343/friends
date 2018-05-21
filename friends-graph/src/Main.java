@@ -13,7 +13,13 @@ import java.util.List;
 public class Main {
     // TODO: add a GUI
     public static void main(String[] args) throws AWTException {
-        harvest();
+//        harvest();
+    	System.out.println("running...");
+    	String path = "C:\\Users\\roger\\Downloads\\27747Christopher Ye.html";
+    	List<Person> list = FriendsParser.extractFriendsInfo(path);
+//    	for (Person p : list) {
+//    		System.out.print(p.toString());
+//    	}
     }
 
     public static void harvest() throws AWTException {

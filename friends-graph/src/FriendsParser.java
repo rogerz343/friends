@@ -66,31 +66,35 @@ public class FriendsParser {
         if (ownerId == null) { return null; }
         String ownerUrl = "https://www.facebook.com/" + ownerId;
         result.add(new Person(ownerId, ownerName, ownerUrl));
-        
+                
         // add the rest of the friends
         boolean success = true;
         while (!isEOF(br)) {
             success = findString(br, LI_TAG);
-            if (!success && !isEOF(br)) { return null; }
+            if (!success && !isEOF(br)) { break; }
             success = findString(br, DIV_TAG1);
-            if (!success && !isEOF(br)) { return null; }
+            if (!success && !isEOF(br)) { System.out.println("111");return null; }
             success = findString(br, DIV_TAG2);
-            if (!success && !isEOF(br)) { return null; }
+            if (!success && !isEOF(br)) { System.out.println("222");return null; }
             success = findString(br, PRECEDES_URL);
-            if (!success && !isEOF(br)) { return null; }
+            if (!success && !isEOF(br)) { System.out.println("333");return null; }
             
             String friendUrl = readUntil(br, SUCCEEDS_URL);
-            if (friendUrl == null) { return null; }
+            if (friendUrl == null) { System.out.println("444");return null; }
+            System.out.println(friendUrl);
             friendUrl = getBaseUrl(friendUrl);
+            System.out.println(friendUrl);
             String[] friendUrlComponents = friendUrl.split("/");
             String friendId = friendUrlComponents[friendUrlComponents.length - 1];
             
             success = findString(br, PRECEDES_NAME);
-            if (!success && !isEOF(br)) { return null; }
+            if (!success && !isEOF(br)) { System.out.println("555");return null; }
             
             String friendName = readUntil(br, SUCCEEDS_NAME);
-            if (friendName == null) { return null; }
+            if (friendName == null) { System.out.println("777");return null; }
             result.add(new Person(friendId, friendName, friendUrl));
+            System.out.println(result.size());
+            System.out.println(isEOF(br));
         }
         
         try {
@@ -128,7 +132,7 @@ public class FriendsParser {
     private static boolean isEOF(Reader r) {
         try {
             r.mark(2);
-            char c = (char) r.read();
+            int c = r.read();
             r.reset();
             return c == -1;
         } catch (IOException e) {
@@ -148,18 +152,18 @@ public class FriendsParser {
     private static boolean findString(Reader r, String s) {
         try {
             r.mark(2);
-            char c = (char) r.read();
+            int c = r.read();
             r.reset();
             while (c != -1) {
                 r.mark(s.length() + 1);
                 for (int i = 0; i < s.length(); i++) {
-                    c = (char) r.read();
+                    c = r.read();
                     if (c == -1) { return false; }
                     if (c != s.charAt(i)) { break; }
                     if (i == s.length() - 1) { return true; }
                 }
                 r.reset();
-                c = (char) r.read();
+                c = r.read();
             }
             return false;
         } catch (IOException e) {
@@ -180,10 +184,10 @@ public class FriendsParser {
     private static String readUntil(Reader r, char end) {
         try {
             StringBuilder sb = new StringBuilder();
-            char c = (char) r.read();
+            int c = r.read();
             while (c != -1 && c != end) {
-                sb.append(c);
-                c = (char) r.read();
+                sb.append((char) c);
+                c = r.read();
             }
             if (c == -1) { return null; }
             return sb.toString();

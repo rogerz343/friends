@@ -1,11 +1,9 @@
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.HeadlessException;
-import java.awt.MouseInfo;
-import java.awt.Point;
-import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -20,11 +18,6 @@ import java.io.IOException;
 public class Harvester {
     
     private InterruptibleRobot robot;
-    
-    private static int FRIENDS_X = 735; // 842;
-    private static int FRIENDS_Y_COVER = 460;
-    private static int FRIENDS_Y_NO_COVER = 360;
-    private static Color FRIENDS_BUTTON_COLOR = new Color(255, 255, 255);
     
     private static int SCROLLBAR_X = 1910;
     private static int SCROLLBAR_Y = 972; // 1020 if downloads tab is closed
@@ -112,24 +105,24 @@ public class Harvester {
         //   ex: "https://www.facebook.com/john.smith.35/friends?lst=1000017..."
         //   will become "https://www.facebook.com/john.smith.35/friends"
         String baseUrlNoSlash = url.split("[\\?#]")[0];
+        String friendsPageUrl = baseUrlNoSlash + "/friends";
         
+        StringSelection ss = new StringSelection(friendsPageUrl);
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
         
-//        // DEPRECATED: VERY INEFFICIENT
-//        robot.mouseMove(0, 0);
-//        Color sample = robot.getPixelColor(FRIENDS_X, FRIENDS_Y_NO_COVER);
-//        if (sample.equals(FRIENDS_BUTTON_COLOR)) {
-//            robot.mouseMove(FRIENDS_X, FRIENDS_Y_NO_COVER);
-//        } else {
-//            sample = robot.getPixelColor(FRIENDS_X, FRIENDS_Y_COVER);
-//            if (sample.equals(FRIENDS_BUTTON_COLOR)) {
-//                robot.mouseMove(FRIENDS_X, FRIENDS_Y_NO_COVER);
-//            } else {
-//                return 1;
-//            }
-//        }
-//        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-//        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-//        return 0;
+        robot.keyPress(KeyEvent.VK_CONTROL);
+        robot.keyPress(KeyEvent.VK_L);
+        robot.keyRelease(KeyEvent.VK_L);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
+        
+        robot.keyPress(KeyEvent.VK_CONTROL);
+        robot.keyPress(KeyEvent.VK_V);
+        robot.keyRelease(KeyEvent.VK_V);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
+        
+        robot.keyPress(KeyEvent.VK_ENTER);
+        robot.keyRelease(KeyEvent.VK_ENTER);
+        return 0;
     }
     
     /**
@@ -191,6 +184,11 @@ public class Harvester {
         
         // change the name of the file just in case, to avoid overriding message
         
+        try {
+			Thread.sleep(100);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
         robot.keyPress(KeyEvent.VK_HOME);
         robot.keyRelease(KeyEvent.VK_HOME);
         typeRandomDigit();

@@ -4,8 +4,13 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * Contains methods that extract relevant information from an html file.
@@ -31,6 +36,44 @@ public class FriendsParser {
     // the following String and char immediately precede and succeed (respectively) the name of the friend
     private static String PRECEDES_NAME = ">";
     private static char SUCCEEDS_NAME = '<';
+    
+    /**
+     * Saves a list of people to the file specified by filepath. Does nothing if the file already exists.
+     * The resulting file will have each Person object on its own line, with the first Person representing
+     * the "owner" and the following Person's representing the owner's friends.
+     * @param people The list of people to save. The first Person in the list represents the "owner", and the
+     * rest of the Person's are the "owner"'s friends.
+     * @param filepath The path to the file to save to.
+     * @return true if no error occurred, false otherwise.
+     * @throws IOException 
+     */
+    public static boolean saveToFile(List<Person> people, String filepath) throws IOException {
+        if (people.isEmpty()) { return false; }
+        Path path = Paths.get(filepath);
+        path = Files.createFile(path);
+        List<String> lines =
+                people.stream()
+                .map(p -> p.toString())
+                .collect(Collectors.toCollection(ArrayList<String>::new));
+        Files.write(path, lines);
+        return true;
+    }
+    
+    /**
+     * Loads a list of people from the file specified by filepath. The first person in the
+     * resulting list is the "owner", while the rest of the people are the owner's friends.
+     * @param filepath The path to the file to load the Person's from.
+     * @return A list of Person's, where the owner is the first person in the list, and the
+     * rest of the people are his/her friends.
+     * @throws IOException
+     */
+    public static List<Person> loadFromFile(String filepath) throws IOException {
+        Path path = Paths.get(filepath);
+        List<String> lines = Files.readAllLines(path);
+        return lines.stream()
+                .map(s -> Person.fromString(s))
+                .collect(Collectors.toCollection(ArrayList<Person>::new));
+    }
     
     /**
      * Returns a list of the input person's friends, where the first element in the list is
@@ -110,7 +153,7 @@ public class FriendsParser {
     }
     
     /**
-     * Given the url to a facebook profile main page, removes any trailing slashes,
+     * Given the url to a facebook profile main page, this method removes any trailing slashes,
      * symbols, or parameters.
      * @param url The url to a facebook profile page
      * @return The url to the given facebook profile main page, with no trailing

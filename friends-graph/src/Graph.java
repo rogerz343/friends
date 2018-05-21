@@ -1,3 +1,12 @@
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -43,6 +52,16 @@ public class Graph<V> {
             if (!adjList.containsKey(e[1])) { adjList.put(e[1], new ArrayList<>()); }
             if (!adjList.get(e[0]).contains(e[1])) { adjList.get(e[0]).add(e[1]); }
             if (!adjList.get(e[1]).contains(e[0])) { adjList.get(e[1]).add(e[0]); }
+        }
+    }
+    
+    /**
+     * Creates a graph with the adjacency list `inputAdjList`
+     * @param inputAdjList The input adjacency list
+     */
+    public Graph(Map<V, List<V>> inputAdjList) {
+        for (V v : inputAdjList.keySet()) {
+            adjList.put(v, inputAdjList.get(v));
         }
     }
     

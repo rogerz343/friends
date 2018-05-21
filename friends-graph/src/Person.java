@@ -15,6 +15,25 @@ public class Person {
         this.name = name;
         this.url = url;
     }
+    
+    /**
+     * Returns a Person object from its String representation. The String
+     * representation must follow the same format as the output of
+     * Person#toString().
+     * @param personStr The String representation of a Person.
+     * @return The Person corresponding to personStr.
+     * Note that this method may not work correctly if any of the Person's
+     * attributes includes any of the special tokens:
+     * "Person [id=", ", name=", ", url=", or "]"
+     */
+    public static Person fromString(String personStr) {
+        int endOfId = personStr.indexOf(", name=");
+        int endOfName = personStr.indexOf(", url=");
+        String id = personStr.substring(11, endOfId);
+        String name = personStr.substring(endOfId + 7, endOfName);
+        String url = personStr.substring(endOfName + 6, personStr.length() - 1);
+        return new Person(id, name, url);
+    }
 
     @Override
     public int hashCode() {

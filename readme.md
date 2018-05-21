@@ -18,3 +18,6 @@ The program (currently) only runs correctly on Windows 10. Note that there could
 ## Notes
 - More detail about how classes are implemented can be found in the source code.
 - There are clearly better ways to implement some of this program's functionalities, but the current implementation is simple to understand (not dependent on any non-standard libraries) and "good enough".
+
+## TODO and other possible improvements
+- Revamp file I/O to only use java's files and paths libraries (`java.nio.\*`)

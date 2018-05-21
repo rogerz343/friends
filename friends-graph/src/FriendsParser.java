@@ -63,10 +63,10 @@ public class FriendsParser {
         // add the html's "owner"'s name to the results
         List<Person> result = new ArrayList<>();
         if (!findString(br, PRECEDES_OWNER_ID)) { return null; }
-        String ownerID = readUntil(br, SUCCEEDS_OWNER_ID);
-        if (ownerID == null) { return null; }
-        String ownerUrl = "https://www.facebook.com/" + ownerID + "/";
-        result.add(new Person(ownerID, ownerName, ownerUrl));
+        String ownerId = readUntil(br, SUCCEEDS_OWNER_ID);
+        if (ownerId == null) { return null; }
+        String ownerUrl = "https://www.facebook.com/" + ownerId;
+        result.add(new Person(ownerId, ownerName, ownerUrl));
         
         // add the rest of the friends
         boolean success = true;
@@ -82,16 +82,17 @@ public class FriendsParser {
             
             String friendUrl = readUntil(br, SUCCEEDS_URL);
             if (friendUrl == null) { return null; }
+            friendUrl = getBaseUrl(friendUrl);
+            String[] friendUrlComponents = friendUrl.split("/");
+            String friendId = friendUrlComponents[friendUrlComponents.length - 1];
             
             success = findString(br, PRECEDES_NAME);
             if (!success && !isEOF(br)) { return null; }
             
             String friendName = readUntil(br, SUCCEEDS_NAME);
             if (friendName == null) { return null; }
-            result.add(new Person(ownerID, ownerName));
+            result.add(new Person(friendId, friendName, friendUrl));
         }
-        
-        
         
         try {
             br.close();
@@ -99,6 +100,25 @@ public class FriendsParser {
             e.printStackTrace();
             return null;
         }
+        
+        return result;
+    }
+    
+    /**
+     * Given the url to a facebook profile main page, removes any trailing slashes,
+     * symbols, or parameters.
+     * @param url The url to a facebook profile page
+     * @return The url to the given facebook profile main page, with no trailing
+     * slashes, symbols, or parameters.
+     * Example:
+     * Turns "https://www.facebook.com/john.smith.35?fref=pb&hc_location=friends_tab"
+     * to "https://www.facebook.com/john.smith.35"
+     * but does NOT work if not on main page, ex:
+     * "https://www.facebook.com/john.smith.35/friends?lst=1000017..."
+     * will become "https://www.facebook.com/john.smith.35/friends"
+     */
+    public static String getBaseUrl(String url) {
+        return url.split("[\\?#]")[0];
     }
     
     /**

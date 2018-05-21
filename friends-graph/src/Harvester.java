@@ -97,12 +97,7 @@ public class Harvester {
         }
         if (url == null) { return 2; }
         
-        // turns "https://www.facebook.com/john.smith.35?fref=pb&hc_location=friends_tab"
-        // to "https://www.facebook.com/john.smith.35"
-        // Note: does NOT work if not on main page:
-        //   ex: "https://www.facebook.com/john.smith.35/friends?lst=1000017..."
-        //   will become "https://www.facebook.com/john.smith.35/friends"
-        String baseUrlNoSlash = url.split("[\\?#]")[0];
+        String baseUrlNoSlash = FriendsParser.getBaseUrl(url);
         String friendsPageUrl = baseUrlNoSlash + "/friends";
         
         StringSelection ss = new StringSelection(friendsPageUrl);

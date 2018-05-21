@@ -8,7 +8,7 @@ public class Person {
     
     public final String id;
     public final String name;
-    public final String url;
+    public final String url;	// the url to the Person's main profile page, with no trailing slashes or symbols
     
     public Person(String id, String name, String url) {
         this.id = id;

@@ -14,7 +14,7 @@ import java.util.Set;
  */
 public class Graph<V> {
     
-    private Map<V, List<V>> adjList;
+    private Map<V, List<V>> adjList = new HashMap<>();
     
     // global variables used for cliques algorithm
     private List<List<V>> maximalCliques = null;
@@ -22,9 +22,7 @@ public class Graph<V> {
     /**
      * Creates an empty graph (with zero nodes and zero edges)
      */
-    public Graph() {
-        adjList = new HashMap<>();
-    }
+    public Graph() {}
     
     /**
      * Creates a graph with the nodes in `nodes` and the edges in `edges`
@@ -32,16 +30,15 @@ public class Graph<V> {
      * @param edges A list of edges, each edge is an array of length 2. The
      * endpoints of the edges to not have to be in `nodes`; they are be created
      * on the fly.
-     * @throws Exception 
      */
-    public Graph(List<V> nodes, List<V[]> edges) throws Exception {
-        adjList = new HashMap<>();
+    public Graph(List<V> nodes, List<V[]> edges)  {
         for (V v : nodes) {
             adjList.put(v, new ArrayList<>());
         }
         for (V[] e : edges) {
             if (e.length != 2) {
-                throw new Exception("Bad input to Graph constructor.");
+                System.out.println("Bad input to Graph constructor");
+                continue;
             }
             if (!adjList.containsKey(e[0])) { adjList.put(e[0], new ArrayList<>()); }
             if (!adjList.containsKey(e[1])) { adjList.put(e[1], new ArrayList<>()); }
@@ -77,6 +74,7 @@ public class Graph<V> {
     private void BronKerboschPivoting(Set<V> R, Set<V> P, Set<V> X) {
         if (P.isEmpty() && X.isEmpty()) {
             maximalCliques.add(new ArrayList<>(R));
+            return;
         }
         V pivot;
         if (!P.isEmpty()) {
@@ -85,7 +83,8 @@ public class Graph<V> {
             pivot = X.iterator().next();
         }
         Set<V> pivotNeighbors = new HashSet<>(adjList.get(pivot));
-        for (V v : P) {
+        Set<V> PCopy = new HashSet<>(P);
+        for (V v : PCopy) {
             if (pivotNeighbors.contains(v)) { continue; }
             
             R.add(v);
@@ -111,7 +110,7 @@ public class Graph<V> {
      * <https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm>
      */
     private void BronKerboschVertexOrdering() {
-        Set<V> P = adjList.keySet();
+        Set<V> P = new HashSet<>(adjList.keySet());
         Set<V> R = new HashSet<>();
         Set<V> X = new HashSet<>();
         List<NodeIntPair> degeneracyOrdering = new ArrayList<>();

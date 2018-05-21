@@ -1,5 +1,8 @@
 import java.awt.AWTException;
 import java.awt.Robot;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * friends
@@ -11,8 +14,6 @@ public class Main {
     // TODO: add a GUI
     public static void main(String[] args) throws AWTException {
         // harvest();
-        List<Integer> nodes = new ArrayList<>();
-        List<Integer[]> edges = new ArrayList<>();
     }
 
     public static void harvest() throws AWTException {

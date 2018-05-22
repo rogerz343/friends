@@ -20,11 +20,20 @@ import java.util.stream.Collectors;
  * These two cases are considered in many of the methods below.
  */
 public class FriendsParser {
-    
+        
     // tags that help to locate the current user's (owner of html file) id
     // the following String and char immediately precede and succeed (respectively) the id of the current user
     private static String PRECEDES_OWNER_ID = "https://www.facebook.com/";
     private static char SUCCEEDS_OWNER_ID = '/';
+    
+    // tags that help to locate the current user's (owner of html file) name
+    // the following tag indicates that we are coming up towards the user's name
+    private static String SPAN_A_TAG =
+            "<span class=\"_2t_q\" id=\"fb-timeline-cover-name\" data-testid=\"profile_name_in_profile_page\">"
+            + "<a class=\"_2nlw _2nlv\" href=\"";
+    // the following String and char immediately precede and succeed (respectively) the name of the current user
+    private static String PRECEDES_OWNER_NAME = "\">";
+    private static char SUCCEEDS_OWNER_NAME = '<';
     
     // tags that indicate that we are about to read a friend's information
     // IMPORTANT: DIV_TAG2 will not appear if the profile block corresponds to yourself (whoever is logged in)
@@ -87,19 +96,12 @@ public class FriendsParser {
      * friends will be extracted first.
      * @return A list of the input profile's friends (up to `maxToExtract`). Returns null if an error occurred.
      * Assumes that html document and people's names are well-formed (i.e. names don't
-     * contain strange characters such as "<", ">", "\"".
-     * Currently, this method is conservative: it will return null if almost any error
-     * (even minor ones) occur
+     * contain strange characters such as "<", ">", "\"", and the general form of the
+     * document is: ... owner id ... owner name ... friend block ... friend block ... ... ... EOF
      * @throws FileNotFoundException If filepath could not be opened
      */
     public static List<Person> extractFriendsInfo(String filepath, int maxToExtract) throws FileNotFoundException {
         File file = new File(filepath);
-        
-        // get the user's name from the filename.
-        // the user's filename should have the following format (without quotes or brackets):
-        // "#####[name].html"
-        String filename = file.getName();
-        String ownerName = filename.substring(5, filename.length() - 5);
         
         int maxReadAttempts = 300; // number of times to try to read a file before giving up (1 try every second)
         int numReadAttempts = 0;
@@ -122,16 +124,24 @@ public class FriendsParser {
             }
         }
         
-        // add the html's "owner"'s name to the results
         List<Person> result = new ArrayList<>();
+        
+        // get the owner user's information and add it to the results
         if (!findString(br, PRECEDES_OWNER_ID)) { return null; }
         String ownerId = readUntil(br, SUCCEEDS_OWNER_ID);
         if (ownerId == null) { return null; }
+        
+        if (!findString(br, SPAN_A_TAG)) { return null; }
+        if (!findString(br, PRECEDES_OWNER_NAME)) { return null; }
+        String ownerName = readUntil(br, SUCCEEDS_OWNER_NAME);
+        if (ownerName == null) { return null; }
+        
         String ownerUrl = "https://www.facebook.com/" + ownerId;
+        
         result.add(new Person(ownerId, ownerName, ownerUrl));
                 
         // add the rest of the friends
-        boolean success = true;
+        boolean success;
         while (!isEOF(br)) {
         	// logic on error checking: if the tag isn't found, then either we hit the EOF
         	// (which is fine) or something actually went wrong (not fine, so return null)

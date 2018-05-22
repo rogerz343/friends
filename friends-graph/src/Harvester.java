@@ -37,8 +37,8 @@ public class Harvester {
     private static int EMPTY_SPACE_Y = 300;  
     
     // time to wait for Windows to copy and paste text to and from clipboard, respectively, in milliseconds
-    private static int WAIT_TIME_AFTER_CTRL_C = 500;
-    private static int WAIT_TIME_AFTER_CTRL_V = 100;
+    private static int WAIT_TIME_AFTER_CTRL_C = 2000;
+    private static int WAIT_TIME_AFTER_CTRL_V = 500;
     
     public Harvester() throws AWTException {
         robot = new InterruptibleRobot();
@@ -223,7 +223,7 @@ public class Harvester {
         robot.keyRelease(KeyEvent.VK_BACK_SPACE);
         
         // put next person's page into chrome address
-        String urlFriendsPage = url + "/friends";
+        String urlFriendsPage = FriendsParser.getFriendsPageUrl(url);
         StringSelection ss = new StringSelection(urlFriendsPage);
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
         
@@ -288,8 +288,8 @@ public class Harvester {
         }
         if (url == null) { return 2; }
         
-        String baseUrlNoSlash = FriendsParser.getBaseUrl(url);
-        String friendsPageUrl = baseUrlNoSlash + "/friends";
+        String baseUrl = FriendsParser.getBaseUrl(url);
+        String friendsPageUrl = FriendsParser.getFriendsPageUrl(baseUrl);
         
         StringSelection ss = new StringSelection(friendsPageUrl);
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);

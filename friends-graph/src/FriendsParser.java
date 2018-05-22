@@ -79,13 +79,17 @@ public class FriendsParser {
      * Returns a list of the input person's friends, where the first element in the list is
      * the input person him/herself.
      * @param filepath The path to the person's facebook friends html file.
-     * @return A list of the input profile's friends. Returns null if an error occurred.
+     * @param maxToExtract The maximum number of friends to extract. Facebook seems
+     * to already sort friends by some notion of interaction, so the most "important"
+     * friends will be extracted first.
+     * @return A list of the input profile's friends (up to `maxToExtract`). Returns null if an error occurred.
      * Assumes that html document and people's names are well-formed (i.e. names don't
      * contain strange characters such as "<", ">", "\"".
      * Currently, this method is conservative: it will return null if almost any error
      * (even minor ones) occur
+     * @throws FileNotFoundException If filepath could not be opened
      */
-    public static List<Person> extractFriendsInfo(String filepath) {
+    public static List<Person> extractFriendsInfo(String filepath, int maxToExtract) throws FileNotFoundException {
         File file = new File(filepath);
         
         // get the user's name from the filename.
@@ -94,12 +98,25 @@ public class FriendsParser {
         String filename = file.getName();
         String ownerName = filename.substring(5, filename.length() - 5);
         
+        int maxReadAttempts = 300; // number of times to try to read a file before giving up (1 try every second)
+        int numReadAttempts = 0;
         BufferedReader br;
-        try {
-            br = new BufferedReader(new FileReader(file));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return null;
+        while (true) {
+            try {
+                br = new BufferedReader(new FileReader(file));
+                break;
+            } catch (FileNotFoundException e) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+            }
+            numReadAttempts++;
+            if (numReadAttempts > maxReadAttempts) {
+                throw new FileNotFoundException("Could not open file to read after "
+                        + maxReadAttempts + " attempts (1 attempt per second)");
+            }
         }
         
         // add the html's "owner"'s name to the results
@@ -134,8 +151,7 @@ public class FriendsParser {
             String friendUrl = readUntil(br, SUCCEEDS_URL);
             if (friendUrl == null) { return null; }
             friendUrl = getBaseUrl(friendUrl);
-            String[] friendUrlComponents = friendUrl.split("/");
-            String friendId = friendUrlComponents[friendUrlComponents.length - 1];
+            String friendId = getIdFromBaseUrl(friendUrl);
             
             success = findString(br, PRECEDES_NAME);
             if (!success && !isEOF(br)) { return null; }
@@ -143,6 +159,8 @@ public class FriendsParser {
             String friendName = readUntil(br, SUCCEEDS_NAME);
             if (friendName == null) { return null; }
             result.add(new Person(friendId, friendName, friendUrl));
+            
+            if (result.size() >= maxToExtract + 1) { return result; }
         }
         
         try {
@@ -158,18 +176,38 @@ public class FriendsParser {
     /**
      * Given the url to a facebook profile main page, this method removes any trailing slashes,
      * symbols, or parameters.
-     * @param url The url to a facebook profile page
-     * @return The url to the given facebook profile main page, with no trailing
-     * slashes, symbols, or parameters.
-     * Example:
-     * Turns "https://www.facebook.com/john.smith.35?fref=pb&hc_location=friends_tab"
-     * to "https://www.facebook.com/john.smith.35"
-     * but does NOT work if not on main page, ex:
-     * "https://www.facebook.com/john.smith.35/friends?lst=1000017..."
-     * will become "https://www.facebook.com/john.smith.35/friends"
+     * @param url The url to a facebook profile page.
+     * @return The url to the given facebook profile main page, with no trailing slashes,
+     * symbols, or other parameters.
+     * For example, "https://www.facebook.com/john.smith.35?fref=pb&hc_location=friends_tab"
+     * becomes "https://www.facebook.com/john.smith.35"
+     * and "https://www.facebook.com/profile.php?id=7777777?fref=pb&hc_location=friends_tab"
+     * becomes "https://www.facebook.com/profile.php?id=7777777".
+     * This method gives incorrect results if the given url is not the main profile page. For
+     * example, "https://www.facebook.com/john.smith.35/friends?lst=1000017..."
+     * incorrectly becomes "https://www.facebook.com/john.smith.35/friends"
      */
     public static String getBaseUrl(String url) {
-        return url.split("[\\?#]")[0];
+        String potentialId = url.split("[\\?#]")[0];
+        
+        // check for special case (when user doesn't have custom url)
+        if (potentialId.equals("profile.php")) {
+            return url.split("&")[0];
+        }
+        return potentialId;
+    }
+    
+    /**
+     * Given a baseUrl (such as one returned from getBaseUrl) with the form (without quotes):
+     * "https://www.facebook.com/john.smith.35" or
+     * "https://www.facebook.com/profile.php?id=7777777",
+     * returns the id, which is just the substring after the "https://www.facebook.com/"
+     * @param baseUrl
+     * @return The id of the person.
+     */
+    public static String getIdFromBaseUrl(String baseUrl) {
+        // "https://www.facebook.com/".length() = 25
+        return baseUrl.substring(25);
     }
     
     /**

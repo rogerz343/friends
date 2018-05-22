@@ -67,6 +67,8 @@ public class Harvester {
     public boolean harvestAllPages(int maxNumPeople, int maxPerPerson, String downloadsDir, String outputDir) {
         int timeout = 180;
         
+        maxNumPeople = Math.min(maxNumPeople, 10000000);
+        
         // first, download the information from the source (usually your own fb page)
         String rootUserHtmlName = harvestSingleFriendsPage();
         
@@ -76,7 +78,7 @@ public class Harvester {
         
         List<Person> rootUserFriends;
         try {
-            rootUserFriends = FriendsParser.extractFriendsInfo(rootUserHtmlPath.toString(), maxPerPerson);
+            rootUserFriends = FriendsParser.extractFriendsInfo(rootUserHtmlPath.toString(), maxPerPerson, 300);
         } catch (FileNotFoundException e2) {
             e2.printStackTrace();
             return false;
@@ -107,17 +109,9 @@ public class Harvester {
             Path userHtmlPath = Paths.get(downloadsDir, userHtmlName).toAbsolutePath();
             if (!waitForDownload(userHtmlPath, timeout)) { return false; }
             
-            // TODO: TEMP: remove this. figure out how to actually wait for a file to completely download
-            // and be ready to use
-            try {
-                Thread.sleep(15 * 1000);
-            } catch (InterruptedException e1) {
-                e1.printStackTrace();
-            }
-            
             List<Person> userFriends;
             try {
-                userFriends = FriendsParser.extractFriendsInfo(userHtmlPath.toString(), maxPerPerson);
+                userFriends = FriendsParser.extractFriendsInfo(userHtmlPath.toString(), maxPerPerson, 300);
             } catch (FileNotFoundException e1) {
                 // could not open this user's profile: just skip this person
                 e1.printStackTrace();
@@ -141,6 +135,8 @@ public class Harvester {
                 if (numAdded >= maxPerPerson) { break; }
             }
             numDownloaded++;
+            
+            // TODO: delete the .js, .css, etc. source folders associated with the html document
         }
         return true;
     }

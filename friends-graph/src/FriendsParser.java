@@ -14,7 +14,10 @@ import java.util.stream.Collectors;
 /**
  * Contains methods that extract relevant information from an html file.
  * @author roger
- *
+ * Note: when you are logged into facebook, it appears that there are two forms of url's for
+ * profiles: one specified by a custom url (such as "https://www.facebook.com/john.smith.75")
+ * and one specified by a profile id (such as "https://www.facebook.com/profile.php?id=7777777").
+ * These two cases are considered in many of the methods below.
  */
 public class FriendsParser {
     
@@ -208,6 +211,22 @@ public class FriendsParser {
     public static String getIdFromBaseUrl(String baseUrl) {
         // "https://www.facebook.com/".length() = 25
         return baseUrl.substring(25);
+    }
+    
+    /**
+     * Given a baseUrl (such as one returned from getBaseUrl) with the form (without quotes):
+     * "https://www.facebook.com/john.smith.35" or
+     * "https://www.facebook.com/profile.php?id=7777777",
+     * returns the url of the Friends page of that person.
+     * @param baseUrl
+     * @return The url of the Friends page of the profile specified by baseUrl
+     */
+    public static String getFriendsPageUrl(String baseUrl) {
+        if (baseUrl.contains("profile.php?")) {
+            return baseUrl + "&sk=friends";
+        } else {
+            return baseUrl + "/friends";
+        }
     }
     
     /**

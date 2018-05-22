@@ -1,10 +1,7 @@
 import java.awt.AWTException;
 import java.awt.Color;
-import java.awt.HeadlessException;
 import java.awt.Toolkit;
-import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.FileNotFoundException;
@@ -30,14 +27,13 @@ public class Harvester {
     
     private static int SCROLLBAR_X = 1910;
     private static int SCROLLBAR_Y = 972; // 1020 if downloads tab is closed
-    private static Color SCROLLBAR_NOT_BOTTOM = new Color(241, 241, 241);
     private static Color SCROLLBAR_BOTTOM = new Color(192, 192, 192);
     
     private static int EMPTY_SPACE_X = 200;
     private static int EMPTY_SPACE_Y = 300;  
     
-    // time to wait for Windows to copy and paste text to and from clipboard, respectively, in milliseconds
-    private static int WAIT_TIME_AFTER_CTRL_C = 2000;
+    // time to wait for Windows to paste text to and from clipboard, in milliseconds
+    // not sure if we actually need this
     private static int WAIT_TIME_AFTER_CTRL_V = 500;
     
     public Harvester() throws AWTException {
@@ -197,60 +193,6 @@ public class Harvester {
         scrollToBottom();
         return fetchHtml();
     }
-
-//    DEPRECATED
-//    /**
-//     * Copies the currently selected text to the system's clipboard using the robot,
-//     * ensuring that the copy is completed before the function returns.
-//     */
-//    private void copyHighlightedTextToClipboard() {
-//        // kind of hack-y solution: set the clipboard to be some String such that
-//        // there is practically no chance for whatever we want to copy to equal that String.
-//        // Then, if we detect a change in the clipboard contents after copying, then we know
-//        // that copying to clipboard has finished. A (perhaps nicer) alternative is to
-//        // clear the system clipboard first.
-//        String randomString = Long.toString((long) (Math.random() * 100000000000000000L));
-//        StringSelection ss = new StringSelection(randomString);
-//        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
-//        
-//        String clipboardContent;
-//        try {
-//            clipboardContent = (String) Toolkit.getDefaultToolkit()
-//                    .getSystemClipboard().getData(DataFlavor.stringFlavor);
-//        } catch (HeadlessException | UnsupportedFlavorException | IOException e) {
-//            e.printStackTrace();
-//            return;
-//        }
-//        if (!clipboardContent.equals(randomString)) {
-//            System.out.println("copyHighlightedTextToClipboard(): set clipboard content failed.");
-//            return;
-//        }
-//        
-//        // manual copying
-//        robot.keyPress(KeyEvent.VK_CONTROL);
-//        robot.keyPress(KeyEvent.VK_C);
-//        robot.keyRelease(KeyEvent.VK_C);
-//        robot.keyRelease(KeyEvent.VK_CONTROL);
-//        
-//        long startTime = System.nanoTime();
-//        int timeout = 15;   // number of seconds before giving up and saying that copy failed.
-//        while (clipboardContent.equals(randomString)) {
-//            try {
-//                // try again
-//                robot.keyPress(KeyEvent.VK_CONTROL);
-//                robot.keyPress(KeyEvent.VK_C);
-//                robot.keyRelease(KeyEvent.VK_C);
-//                robot.keyRelease(KeyEvent.VK_CONTROL);
-//                Thread.sleep(WAIT_TIME_AFTER_CTRL_C);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//            if ((System.nanoTime() - startTime) / 1000000000 > timeout) {
-//                System.out.println("copyHighlightedTextToClipboard(): timed out");
-//                return;
-//            }
-//        }
-//    }
     
     /**
      * Assumes that the current page is a facebook user's profile page and
@@ -299,70 +241,6 @@ public class Harvester {
         }
         return 0;
     }
-
-//    DEPRECATED
-//    /**
-//     * Assumes that the current page is the main page for a specific person
-//     * and navigates to friends page
-//     * @return 0 if no error occurred. 1 if could not locate friends page button.
-//     * 2 if other error occurred.
-//     */
-//    private int viewFriendsPage() {
-//        // make sure window is in focus
-//        robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
-//        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-//        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-//        
-//        // copy the current chrome address bar
-//        robot.keyPress(KeyEvent.VK_CONTROL);
-//        robot.keyPress(KeyEvent.VK_L);
-//        robot.keyRelease(KeyEvent.VK_L);
-//        robot.keyRelease(KeyEvent.VK_CONTROL);
-//        copyHighlightedTextToClipboard();
-//        
-//        String url;
-//        try {
-//            url = (String) Toolkit.getDefaultToolkit()
-//                    .getSystemClipboard().getData(DataFlavor.stringFlavor);
-//        } catch (HeadlessException | UnsupportedFlavorException | IOException e) {
-//            e.printStackTrace();
-//            return 2;
-//        }
-//        
-//        String baseUrl = FriendsParser.getBaseUrl(url);
-//        String friendsPageUrl = FriendsParser.getFriendsPageUrl(baseUrl);
-//        
-//        StringSelection ss = new StringSelection(friendsPageUrl);
-//        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
-//        
-//        robot.keyPress(KeyEvent.VK_CONTROL);
-//        robot.keyPress(KeyEvent.VK_L);
-//        robot.keyRelease(KeyEvent.VK_L);
-//        robot.keyRelease(KeyEvent.VK_CONTROL);
-//        
-//        robot.keyPress(KeyEvent.VK_CONTROL);
-//        robot.keyPress(KeyEvent.VK_V);
-//        robot.keyRelease(KeyEvent.VK_V);
-//        robot.keyRelease(KeyEvent.VK_CONTROL);
-//        
-//        try {
-//            Thread.sleep(WAIT_TIME_AFTER_CTRL_V);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//        
-//        robot.keyPress(KeyEvent.VK_ENTER);
-//        robot.keyRelease(KeyEvent.VK_ENTER);
-//        
-//        // give the page some time to load
-//        try {
-//            Thread.sleep(3000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//        
-//        return 0;
-//    }
     
     /**
      * Scrolls the page to the bottom. May occasionally not make it all the way

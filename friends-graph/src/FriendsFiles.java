@@ -1,4 +1,6 @@
 import java.io.IOException;
+import java.nio.file.DirectoryIteratorException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +15,36 @@ import java.util.stream.Collectors;
  *
  */
 public class FriendsFiles {
+    
+    /**
+     * Loads all Friends files in a directory (not recursively). If an error occurs in reading
+     * some file, then that file is skipped.
+     * @param dirpath The path to the directory to load Friends files from.
+     * @param readAllFiles Set to true if you want to read all files in the directory,
+     * and false if you only want to read files that have a ".friends" extension.
+     * @return A list in which each element is a list of `Person`s, such that
+     * in the list of `Person`s, every Person other than the first one is a
+     * friend of the first Person in the list. Returns null if dirpath
+     * is not a directory.
+     */
+    public static List<List<Person>> loadAllInDirectory(String dirpath, boolean readAllFiles) {
+        Path directory = Paths.get(dirpath);
+        if (!Files.isDirectory(directory)) { return null; }
+        
+        List<List<Person>> result = new ArrayList<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory)) {
+            for (Path file : stream) {
+                if (!Files.isRegularFile(file)) { continue; }
+                if (!readAllFiles && !file.toString().endsWith(".friends")) { continue; }
+                result.add(loadFromFile(file.toString()));
+            }
+        } catch (IOException | DirectoryIteratorException x) {
+            System.err.println(x);
+        }
+        return result;
+    }
+    
+    
     /**
      * Saves a list of people to the file specified by filepath. The resulting file will
      * have each Person object on its own line, with the first Person representing

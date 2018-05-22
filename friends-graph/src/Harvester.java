@@ -7,6 +7,7 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -73,7 +74,13 @@ public class Harvester {
         Path rootUserHtmlPath = Paths.get(downloadsDir, rootUserHtmlName).toAbsolutePath();
         if (!waitForDownload(rootUserHtmlPath, timeout)) { return false; }
         
-        List<Person> rootUserFriends = FriendsParser.extractFriendsInfo(rootUserHtmlPath.toString());
+        List<Person> rootUserFriends;
+        try {
+            rootUserFriends = FriendsParser.extractFriendsInfo(rootUserHtmlPath.toString(), maxPerPerson);
+        } catch (FileNotFoundException e2) {
+            e2.printStackTrace();
+            return false;
+        }
         Person rootUser = rootUserFriends.get(0);
         String outputFile = Paths.get(outputDir, rootUser.id).toAbsolutePath().toString();
         try {
@@ -100,7 +107,22 @@ public class Harvester {
             Path userHtmlPath = Paths.get(downloadsDir, userHtmlName).toAbsolutePath();
             if (!waitForDownload(userHtmlPath, timeout)) { return false; }
             
-            List<Person> userFriends = FriendsParser.extractFriendsInfo(userHtmlPath.toString());
+            // TODO: TEMP: remove this. figure out how to actually wait for a file to completely download
+            // and be ready to use
+            try {
+                Thread.sleep(15 * 1000);
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+            }
+            
+            List<Person> userFriends;
+            try {
+                userFriends = FriendsParser.extractFriendsInfo(userHtmlPath.toString(), maxPerPerson);
+            } catch (FileNotFoundException e1) {
+                // could not open this user's profile: just skip this person
+                e1.printStackTrace();
+                continue;
+            }
             outputFile = Paths.get(outputDir, user.id).toAbsolutePath().toString();
             try {
                 FriendsParser.saveToFile(userFriends, outputFile);
@@ -110,8 +132,13 @@ public class Harvester {
             }
             
             finishedPeople.add(user);
+            int numAdded = 0;
             for (Person p : userFriends) {
                 if (!finishedPeople.contains(p)) { downloadQueue.add(p); }
+                
+                // placed outside of the if statement so nodes will have max degree maxPerPerson
+                numAdded++;
+                if (numAdded >= maxPerPerson) { break; }
             }
             numDownloaded++;
         }
@@ -126,8 +153,11 @@ public class Harvester {
      * @return true if the file is found, false otherwise.
      */
     private boolean waitForDownload(Path filepath, int timeout) {
-        int secondsWaited = 0;
-        while (!Files.exists(filepath) && secondsWaited < timeout) {
+        int secondsWaited = 0;  // not the most accurate, but good enough
+        while (!Files.exists(filepath)
+                && Files.isReadable(filepath)
+                && Files.isWritable(filepath)
+                && secondsWaited < timeout) {
             try {
                 Thread.sleep(1000);
                 secondsWaited++;
@@ -331,6 +361,9 @@ public class Harvester {
             }
             // else, we are either not at the bottom or some other on-screen element
             // got in the way. in any case, just keep going
+            
+            // TODO: TEMP: JUST FOR PERSONAL TESTING; REMOVE THIS LATER
+            if ((System.nanoTime() - startTime) / 1000000000 >= 30) { return 0; }
         }
         return 0;
     }

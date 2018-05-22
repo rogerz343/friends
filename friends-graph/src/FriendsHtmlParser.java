@@ -26,12 +26,6 @@ public class FriendsHtmlParser {
     // the following String and char immediately precede and succeed (respectively) the html source url
     private static String PRECEDES_SOURCE_URL = ")";
     private static char SUCCEEDS_SOURCE_URL = ' ';
-        
-//    // tags that help to locate the current user's (owner of html file) id
-//    // the following String and char immediately precede and succeed (respectively) the id of the current user
-//    private static String PRECEDES_OWNER_ID = "https://www.facebook.com/";
-//    private static char SUCCEEDS_OWNER_ID_CUSTOM_ID = '/';  // case where user has a custom url/id
-//    private static char SUCCEEDS_OWNER_ID_NUMERIC_ID = '&'; // case where user has default facebook numeric id
     
     // tags that help to locate the current user's (owner of html file) name
     // the following tag indicates that we are coming up towards the user's name
@@ -254,23 +248,6 @@ public class FriendsHtmlParser {
         // where '?' represents either '?' or '#' and "[...]" represents trailing characters
         return url.split("[\\?#]")[0];
     }
-    
-//    /**
-//     * Given a baseUrl (such as one returned from getBaseUrl) with the form (without quotes):
-//     * "https://www.facebook.com/john.smith.35" or
-//     * "https://www.facebook.com/profile.php?id=7777777",
-//     * returns the id, which is just the substring after the "https://www.facebook.com/"
-//     * in the case of custom urls or is the numeric id if there is no custom url.
-//     * @param baseUrl The url with the form described above, or null if the url doesn't
-//     * exist (for example, if the account is deactivated).
-//     * @return The id of the person, or null if the account is deactivated.
-//     */
-//    public static String getIdFromBaseUrl(String baseUrl) {
-//        if (baseUrl == null) { return null; }
-//        
-//        // "https://www.facebook.com/".length() = 25
-//        return baseUrl.substring(25);
-//    }
     
     /**
      * Checks whether the given Reader has reached EOF without advancing file pointer

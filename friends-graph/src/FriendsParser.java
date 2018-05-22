@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,19 +51,28 @@ public class FriendsParser {
     private static char SUCCEEDS_NAME = '<';
     
     /**
-     * Saves a list of people to the file specified by filepath. Does nothing if the file already exists.
-     * The resulting file will have each Person object on its own line, with the first Person representing
-     * the "owner" and the following Person's representing the owner's friends.
+     * Saves a list of people to the file specified by filepath. The resulting file will
+     * have each Person object on its own line, with the first Person representing
+     * the "owner" and the following Person's representing the owner's friends. This method
+     * does nothing if the file already exists and throws an exception if any other error
+     * occurs.
      * @param people The list of people to save. The first Person in the list represents the "owner", and the
      * rest of the Person's are the "owner"'s friends.
      * @param filepath The path to the file to save to.
-     * @return true if no error occurred, false otherwise.
-     * @throws IOException 
+     * @return false if the file already exists; true otherwise.
+     * @throws IllegalArgumentException if `people` is empty.
+     * @throws IOException
      */
     public static boolean saveToFile(List<Person> people, String filepath) throws IOException {
-        if (people.isEmpty()) { return false; }
+        if (people.isEmpty()) { throw new IllegalArgumentException(); }
         Path path = Paths.get(filepath);
-        path = Files.createFile(path);
+        
+        try {
+            path = Files.createFile(path);
+        } catch (FileAlreadyExistsException e) {
+            return false;
+        }
+        
         List<String> lines =
                 people.stream()
                 .map(p -> p.toString())

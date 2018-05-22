@@ -115,7 +115,10 @@ public class Harvester {
             }
             outputFile = Paths.get(outputDir, user.id).toAbsolutePath().toString();
             try {
-                FriendsParser.saveToFile(userFriends, outputFile);
+                if (!FriendsParser.saveToFile(userFriends, outputFile)) {
+                    System.out.println("harvestAllPages(): " + outputFile + " already exists. Now using existing file.");
+                    userFriends = FriendsParser.loadFromFile(outputFile);
+                }
             } catch (IOException e) {
                 e.printStackTrace();
                 return false;
@@ -283,7 +286,7 @@ public class Harvester {
             // got in the way. in any case, just keep going
             
             // TODO: TEMP: JUST FOR PERSONAL TESTING; REMOVE THIS LATER
-            if ((System.nanoTime() - startTime) / 1000000000 >= 30) { return 0; }
+            if ((System.nanoTime() - startTime) / 1000000000 >= 10) { return 0; }
         }
         return 0;
     }

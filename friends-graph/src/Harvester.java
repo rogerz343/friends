@@ -203,8 +203,56 @@ public class Harvester {
     }
     
     /**
+     * Copies the currently selected text to the system's clipboard using the robot,
+     * ensuring that the copy is completed before the function returns.
+     */
+    private void copyHighlightedTextToClipboard() {
+        // kind of hack-y solution: set the clipboard to be some String such that
+        // there is practically no chance for whatever we want to copy to equal that String.
+        // Then, if we detect a change in the clipboard contents after copying, then we know
+        // that copying to clipboard has finished. A (perhaps nicer) alternative is to
+        // clear the system clipboard first.
+        String randomString = Long.toString((long) (Math.random() * 100000000000000000L));
+        StringSelection ss = new StringSelection(randomString);
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
+        
+        String clipboardContent;
+        try {
+            clipboardContent = (String) Toolkit.getDefaultToolkit()
+                    .getSystemClipboard().getData(DataFlavor.stringFlavor);
+        } catch (HeadlessException | UnsupportedFlavorException | IOException e) {
+            e.printStackTrace();
+            return;
+        }
+        if (!clipboardContent.equals(randomString)) {
+            System.out.println("copyHighlightedTextToClipboard(): set clipboard content failed.");
+            return;
+        }
+        
+        // manual copying
+        robot.keyPress(KeyEvent.VK_CONTROL);
+        robot.keyPress(KeyEvent.VK_C);
+        robot.keyRelease(KeyEvent.VK_C);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
+        
+        long startTime = System.nanoTime();
+        int timeout = 10;   // number of seconds before giving up and saying that copy failed.
+        while (clipboardContent.equals(randomString)) {
+            try {
+                Thread.sleep(WAIT_TIME_AFTER_CTRL_C);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if ((System.nanoTime() - startTime) / 1000000000 > timeout) {
+                System.out.println("copyHighlightedTextToClipboard(): timed out");
+                return;
+            }
+        }
+    }
+    
+    /**
      * Assumes that the current page is a facebook user's profile page and
-     * navigagtes to the friends page, given its url.
+     * navigates to the friends page, given its url.
      * @param url The url of the Friends page of the desired person
      * @return 0 if no error occurred, 1 otherwise.
      */
@@ -267,18 +315,9 @@ public class Harvester {
         robot.keyPress(KeyEvent.VK_L);
         robot.keyRelease(KeyEvent.VK_L);
         robot.keyRelease(KeyEvent.VK_CONTROL);
-        robot.keyPress(KeyEvent.VK_CONTROL);
-        robot.keyPress(KeyEvent.VK_C);
-        robot.keyRelease(KeyEvent.VK_C);
-        robot.keyRelease(KeyEvent.VK_CONTROL);
-        try {
-            Thread.sleep(WAIT_TIME_AFTER_CTRL_C);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            return 2;
-        }
+        copyHighlightedTextToClipboard();
         
-        String url = null;
+        String url;
         try {
             url = (String) Toolkit.getDefaultToolkit()
                     .getSystemClipboard().getData(DataFlavor.stringFlavor);
@@ -286,7 +325,6 @@ public class Harvester {
             e.printStackTrace();
             return 2;
         }
-        if (url == null) { return 2; }
         
         String baseUrl = FriendsParser.getBaseUrl(url);
         String friendsPageUrl = FriendsParser.getFriendsPageUrl(baseUrl);
@@ -388,7 +426,9 @@ public class Harvester {
      * Saves the dynamically generated html file from the current web page as an html file
      * in the current working directory. Assumes that chrome is in focus and is on the correct webpage.
      * Assumes that chrome's save "Webpage, complete" saves the dynamically generated html (not the source code).
-     * @return The filename of the html file that was downloaded, or null if an error occured.
+     * @return The filename of the html file that was downloaded, or null if an error occurred.
+     * TODO: temp: there is currently a bug in which the wrong String is returned, perhaps due to
+     * the retrieving the incorrect string from the clipboard when assigning htmlFilename
      */
     private String fetchHtml() {
          
@@ -402,7 +442,6 @@ public class Harvester {
         robot.keyRelease(KeyEvent.VK_CONTROL);
         
         // change the name of the file just in case, to avoid overriding message
-        
         try {
 			Thread.sleep(100);
 		} catch (InterruptedException e) {
@@ -421,15 +460,7 @@ public class Harvester {
         robot.keyPress(KeyEvent.VK_A);
         robot.keyRelease(KeyEvent.VK_A);
         robot.keyRelease(KeyEvent.VK_CONTROL);
-        robot.keyPress(KeyEvent.VK_CONTROL);
-        robot.keyPress(KeyEvent.VK_C);
-        robot.keyRelease(KeyEvent.VK_C);
-        robot.keyRelease(KeyEvent.VK_CONTROL);
-        try {
-            Thread.sleep(WAIT_TIME_AFTER_CTRL_C);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        copyHighlightedTextToClipboard();
         
         String htmlFilename;
         try {

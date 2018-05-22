@@ -88,22 +88,27 @@ public class FriendsParser {
     }
     
     /**
-     * Returns a list of the input person's friends, where the first element in the list is
-     * the input person him/herself.
+     * Given an html file of a person's facebook Friends page, returns a list of that
+     * person's friends, where the first element in the list is the input person him/herself.
+     * This method will try to open the file every second for maxReadAttempts seconds before
+     * throwing a FileNotFoundException.
      * @param filepath The path to the person's facebook friends html file.
      * @param maxToExtract The maximum number of friends to extract. Facebook seems
      * to already sort friends by some notion of interaction, so the most "important"
      * friends will be extracted first.
+     * @return The maximum number of attempts that this method will make to open the file
+     * (at one attempt per second).
      * @return A list of the input profile's friends (up to `maxToExtract`). Returns null if an error occurred.
      * Assumes that html document and people's names are well-formed (i.e. names don't
      * contain strange characters such as "<", ">", "\"", and the general form of the
      * document is: ... owner id ... owner name ... friend block ... friend block ... ... ... EOF
      * @throws FileNotFoundException If filepath could not be opened
+     * 
      */
-    public static List<Person> extractFriendsInfo(String filepath, int maxToExtract) throws FileNotFoundException {
+    public static List<Person> extractFriendsInfo(String filepath, int maxToExtract, int maxReadAttempts)
+            throws FileNotFoundException {
         File file = new File(filepath);
         
-        int maxReadAttempts = 300; // number of times to try to read a file before giving up (1 try every second)
         int numReadAttempts = 0;
         BufferedReader br;
         while (true) {
@@ -163,15 +168,18 @@ public class FriendsParser {
             
             String friendUrl = readUntil(br, SUCCEEDS_URL);
             if (friendUrl == null) { return null; }
-            friendUrl = getBaseUrl(friendUrl);
-            String friendId = getIdFromBaseUrl(friendUrl);
+            String friendBaseUrl = getBaseUrl(friendUrl);
+            
+            // special case: when account is deactivated, just skip this person
+            if (friendBaseUrl == null) { continue; }
+            
+            String friendId = getIdFromBaseUrl(friendBaseUrl);
             
             success = findString(br, PRECEDES_NAME);
             if (!success && !isEOF(br)) { return null; }
-            
             String friendName = readUntil(br, SUCCEEDS_NAME);
             if (friendName == null) { return null; }
-            result.add(new Person(friendId, friendName, friendUrl));
+            result.add(new Person(friendId, friendName, friendBaseUrl));
             
             if (result.size() >= maxToExtract + 1) { return result; }
         }
@@ -191,7 +199,8 @@ public class FriendsParser {
      * symbols, or parameters.
      * @param url The url to a facebook profile page.
      * @return The url to the given facebook profile main page, with no trailing slashes,
-     * symbols, or other parameters.
+     * symbols, or other parameters. If the user's account is deactivated, then
+     * returns null.
      * For example, "https://www.facebook.com/john.smith.35?fref=pb&hc_location=friends_tab"
      * becomes "https://www.facebook.com/john.smith.35"
      * and "https://www.facebook.com/profile.php?id=7777777?fref=pb&hc_location=friends_tab"
@@ -203,9 +212,16 @@ public class FriendsParser {
     public static String getBaseUrl(String url) {
         String potentialUrl = url.split("[\\?#]")[0];
         
-        // check for special case (when user doesn't have custom url)
+        // check for special case when user doesn't have custom url
         if (getIdFromBaseUrl(potentialUrl).equals("profile.php")) {
             return url.split("&")[0];
+        }
+        
+        // check for special case when user's account is deactivated
+        // the url will have the form: "https://www.facebook.com/[logged in user id]/friends#",
+        // so we can identify it by the presence of a "/friends"
+        if (potentialUrl.contains("/friends")) {
+            return null;
         }
         return potentialUrl;
     }
@@ -215,10 +231,13 @@ public class FriendsParser {
      * "https://www.facebook.com/john.smith.35" or
      * "https://www.facebook.com/profile.php?id=7777777",
      * returns the id, which is just the substring after the "https://www.facebook.com/"
-     * @param baseUrl
-     * @return The id of the person.
+     * @param baseUrl The url with the form described above, or null if the url doesn't
+     * exist (for example, if the account is deactivated).
+     * @return The id of the person, or null if the account is deactivated.
      */
     public static String getIdFromBaseUrl(String baseUrl) {
+        if (baseUrl == null) { return null; }
+        
         // "https://www.facebook.com/".length() = 25
         return baseUrl.substring(25);
     }
@@ -228,10 +247,14 @@ public class FriendsParser {
      * "https://www.facebook.com/john.smith.35" or
      * "https://www.facebook.com/profile.php?id=7777777",
      * returns the url of the Friends page of that person.
-     * @param baseUrl
-     * @return The url of the Friends page of the profile specified by baseUrl
+     * @param baseUrl The url with the form described above, or null if the account
+     * is deactivated.
+     * @return The url of the Friends page of the profile specified by baseUrl, or
+     * null if baseUrl is null.
      */
     public static String getFriendsPageUrl(String baseUrl) {
+        if (baseUrl == null) { return null; }
+        
         if (baseUrl.contains("profile.php?")) {
             return baseUrl + "&sk=friends";
         } else {

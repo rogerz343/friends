@@ -155,13 +155,17 @@ public class FriendsParser {
         // note that this section has slightly different functionality from getBaseUrl()
         // sourceUrl has two forms:
         // (1) https://www.facebook.com/profile.php?id=7777777&sk=friends
-        // (2) https://www.facebook.com/john.smith.35/friends
+        // (2) https://www.facebook.com/john.smith.35/friends?...
         String ownerBaseUrl;
         if (sourceUrl.contains("/profile.php?id=")) {
             ownerBaseUrl = sourceUrl.split("&")[0];
         } else {
-            int indexAfterBaseUrl = sourceUrl.length() - 8;
-            ownerBaseUrl = sourceUrl.substring(0, indexAfterBaseUrl);
+            // first, change form from
+            // "https://www.facebook.com/john.smith.35/friends?..." to
+            // "https://www.facebook.com/john.smith.35/friends"
+            String sourceUrlStripped = sourceUrl.split("[\\?#]")[0];
+            int indexAfterBaseUrl = sourceUrlStripped.length() - 8;
+            ownerBaseUrl = sourceUrlStripped.substring(0, indexAfterBaseUrl);
         }
                 
         if (!findString(br, SPAN_A_TAG)) { return null; }
@@ -174,8 +178,8 @@ public class FriendsParser {
         // add the rest of the friends
         boolean success;
         while (!isEOF(br)) {
-        	// logic on error checking: if the tag isn't found, then either we hit the EOF
-        	// (which is fine) or something actually went wrong (not fine, so return null)
+            // logic on error checking: if the tag isn't found, then either we hit the EOF
+            // (which is fine) or something actually went wrong (not fine, so return null)
             success = findString(br, LI_TAG);
             if (!success && !isEOF(br)) { return null; }
             success = findString(br, DIV_TAG1);
@@ -219,8 +223,8 @@ public class FriendsParser {
     }
     
     /**
-     * Given the url to a facebook profile main page, this method removes any trailing slashes,
-     * symbols, or parameters.
+     * Given the url to a facebook profile main page, this method removes trailing slashes,
+     * symbols, and other additional parameters.
      * @param url The url to a facebook profile page.
      * @return The url to the given facebook profile main page, with no trailing slashes,
      * symbols, or other parameters. If the user's account is deactivated, then

@@ -10,7 +10,7 @@ public class Person {
     private final String id;
     private final int urlIdType;
     private final String name;
-    private final String baseUrl;	// the url to the Person's main profile page, with no trailing slashes or symbols
+    private final String baseUrl;    // the url to the Person's main profile page, with no trailing slashes or symbols
     
     // has the form "https://www.facebook.com/john.smith.35", where "john.smith.35" is the id
     private static int CUSTOM_URL_TYPE = 0;

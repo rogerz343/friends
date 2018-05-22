@@ -17,18 +17,18 @@ public class Main {
         long startTime = System.nanoTime();
         System.out.println("Program started at: " + LocalDateTime.now());
         
-    	String DOWNLOADS_DIR = "D:\\Robin Zhang\\Downloads\\";
-    	String OUTPUT_DIR = "D:\\Robin Zhang\\Desktop\\savev2\\";
-    	try {
+        String DOWNLOADS_DIR = "D:\\Robin Zhang\\Downloads\\";
+        String OUTPUT_DIR = "D:\\Robin Zhang\\Desktop\\savev2\\";
+        try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-    	Harvester h = new Harvester();
-    	h.harvestAllPages(1000, 100, DOWNLOADS_DIR, OUTPUT_DIR);
-    	
-    	long endTime = System.nanoTime();
-    	System.out.println("Program ran for " + ((endTime - startTime) / 100000000) + " seconds.");
+        Harvester h = new Harvester();
+        h.harvestAllPages(1000, 100, DOWNLOADS_DIR, OUTPUT_DIR);
+        
+        long endTime = System.nanoTime();
+        System.out.println("Program ran for " + ((endTime - startTime) / 100000000) + " seconds.");
     }
 
     public static void harvest() throws AWTException {

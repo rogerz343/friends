@@ -25,7 +25,7 @@ public class Main {
             e.printStackTrace();
         }
         Harvester h = new Harvester();
-        h.harvestAllPages(1000, 100, DOWNLOADS_DIR, OUTPUT_DIR);
+        h.harvestAllPages(500, 100, DOWNLOADS_DIR, OUTPUT_DIR);
         
         long endTime = System.nanoTime();
         System.out.println("Program ran for " + ((endTime - startTime) / 100000000) + " seconds.");

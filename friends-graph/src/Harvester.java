@@ -227,11 +227,12 @@ public class Harvester {
         robot.keyRelease(KeyEvent.VK_V);
         robot.keyRelease(KeyEvent.VK_CONTROL);
         
-        try {
-            Thread.sleep(WAIT_TIME_AFTER_CTRL_V);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        // not sure if we need this
+//        try {
+//            Thread.sleep(WAIT_TIME_AFTER_CTRL_V);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
         
         robot.keyPress(KeyEvent.VK_ENTER);
         robot.keyRelease(KeyEvent.VK_ENTER);
@@ -336,20 +337,19 @@ public class Harvester {
         robot.keyRelease(KeyEvent.VK_BACK_SPACE);
         String htmlFilename = "";
         for (int i = 0; i < 20; i++) {
-            char digit = typeRandomDigit();
-            htmlFilename += digit;
+            char randomChar = (char) ((int) (Math.random() * 26) + 'a');
+            htmlFilename += randomChar;
         }
-        robot.keyPress(KeyEvent.VK_PERIOD);
-        robot.keyRelease(KeyEvent.VK_PERIOD);
-        robot.keyPress(KeyEvent.VK_H);
-        robot.keyRelease(KeyEvent.VK_H);
-        robot.keyPress(KeyEvent.VK_T);
-        robot.keyRelease(KeyEvent.VK_T);
-        robot.keyPress(KeyEvent.VK_M);
-        robot.keyRelease(KeyEvent.VK_M);
-        robot.keyPress(KeyEvent.VK_L);
-        robot.keyRelease(KeyEvent.VK_L);
         htmlFilename += ".html";
+        
+        // copy and paste htmlFilename into chrome's save dialog
+        StringSelection ss = new StringSelection(htmlFilename);
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
+        
+        robot.keyPress(KeyEvent.VK_CONTROL);
+        robot.keyPress(KeyEvent.VK_V);
+        robot.keyRelease(KeyEvent.VK_V);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
         
         // save the complete webpage (in order to save the dynamically generated html document
         robot.keyPress(KeyEvent.VK_TAB);
@@ -363,28 +363,5 @@ public class Harvester {
         robot.keyPress(KeyEvent.VK_ENTER);
         robot.keyRelease(KeyEvent.VK_ENTER);
         return htmlFilename;
-    }
-    
-    /**
-     * Types a digit at random.
-     * @return The digit that was typed.
-     */
-    private char typeRandomDigit() {
-        int random = (int) (Math.random() * 10);
-        int code = KeyEvent.VK_0;
-        if (random == 0) { code = KeyEvent.VK_0; }
-        else if (random == 1) { code = KeyEvent.VK_1; }
-        else if (random == 2) { code = KeyEvent.VK_2; }
-        else if (random == 3) { code = KeyEvent.VK_3; }
-        else if (random == 4) { code = KeyEvent.VK_4; }
-        else if (random == 5) { code = KeyEvent.VK_5; }
-        else if (random == 6) { code = KeyEvent.VK_6; }
-        else if (random == 7) { code = KeyEvent.VK_7; }
-        else if (random == 8) { code = KeyEvent.VK_8; }
-        else if (random == 9) { code = KeyEvent.VK_9; }
-        else { System.out.println("Math is broken"); }
-        robot.keyPress(code);
-        robot.keyRelease(code);
-        return (char) (random + '0');
     }
 }

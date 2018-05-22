@@ -201,13 +201,13 @@ public class FriendsParser {
      * incorrectly becomes "https://www.facebook.com/john.smith.35/friends"
      */
     public static String getBaseUrl(String url) {
-        String potentialId = url.split("[\\?#]")[0];
+        String potentialUrl = url.split("[\\?#]")[0];
         
         // check for special case (when user doesn't have custom url)
-        if (potentialId.equals("profile.php")) {
+        if (getIdFromBaseUrl(potentialUrl).equals("profile.php")) {
             return url.split("&")[0];
         }
-        return potentialId;
+        return potentialUrl;
     }
     
     /**

@@ -438,7 +438,6 @@ public class Harvester {
      * the retrieving the incorrect string from the clipboard when assigning htmlFilename
      */
     private String fetchHtml() {
-         
         robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
         robot.mousePress(InputEvent.BUTTON2_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON2_DOWN_MASK);
@@ -473,6 +472,7 @@ public class Harvester {
         robot.keyRelease(KeyEvent.VK_M);
         robot.keyPress(KeyEvent.VK_L);
         robot.keyRelease(KeyEvent.VK_L);
+        htmlFilename += ".html";
         
         // save the complete webpage (in order to save the dynamically generated html document
         robot.keyPress(KeyEvent.VK_TAB);

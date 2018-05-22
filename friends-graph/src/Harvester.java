@@ -74,7 +74,7 @@ public class Harvester {
         
         List<Person> rootUserFriends;
         try {
-            rootUserFriends = FriendsParser.extractFriendsInfo(rootUserHtmlPath.toString(), maxPerPerson, 300);
+            rootUserFriends = FriendsHtmlParser.extractFriendsInfo(rootUserHtmlPath.toString(), maxPerPerson, 300);
         } catch (FileNotFoundException e2) {
             e2.printStackTrace();
             return false;
@@ -82,7 +82,7 @@ public class Harvester {
         Person rootUser = rootUserFriends.get(0);
         String outputFile = Paths.get(outputDir, rootUser.getUniqueKey()).toAbsolutePath().toString();
         try {
-            FriendsParser.saveToFile(rootUserFriends, outputFile);
+            FriendsHtmlParser.saveToFile(rootUserFriends, outputFile);
         } catch (IOException e) {
             e.printStackTrace();
             return false;
@@ -107,7 +107,7 @@ public class Harvester {
             
             List<Person> userFriends;
             try {
-                userFriends = FriendsParser.extractFriendsInfo(userHtmlPath.toString(), maxPerPerson, 300);
+                userFriends = FriendsHtmlParser.extractFriendsInfo(userHtmlPath.toString(), maxPerPerson, 300);
             } catch (FileNotFoundException e1) {
                 // could not open this user's profile: just skip this person
                 e1.printStackTrace();
@@ -115,9 +115,9 @@ public class Harvester {
             }
             outputFile = Paths.get(outputDir, user.getUniqueKey()).toAbsolutePath().toString();
             try {
-                if (!FriendsParser.saveToFile(userFriends, outputFile)) {
+                if (!FriendsHtmlParser.saveToFile(userFriends, outputFile)) {
                     System.out.println("harvestAllPages(): " + outputFile + " already exists. Now using existing file.");
-                    userFriends = FriendsParser.loadFromFile(outputFile);
+                    userFriends = FriendsHtmlParser.loadFromFile(outputFile);
                 }
             } catch (IOException e) {
                 e.printStackTrace();

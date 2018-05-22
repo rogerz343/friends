@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * and one specified by a profile id (such as "https://www.facebook.com/profile.php?id=7777777").
  * These two cases are considered in many of the methods below.
  */
-public class FriendsParser {
+public class FriendsHtmlParser {
     
     // tags that help to locate the source url of the html file
     // the following String and char immediately precede and succeed (respectively) the html source url

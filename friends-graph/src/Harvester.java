@@ -43,7 +43,7 @@ public class Harvester {
     public Harvester() throws AWTException {
         robot = new InterruptibleRobot();
         robot.setAutoWaitForIdle(true);
-        robot.setAutoDelay(100);
+        robot.setAutoDelay(200);
     }
     
     // TODO: add error checking
@@ -172,8 +172,10 @@ public class Harvester {
     
     // TODO: add error checking
     /**
-     * Downloads the html document of a facebook user's "Friends" page. Has several
-     * assumptions in order to operate correctly:
+     * Downloads the html document of a facebook user's Friends page, with all
+     * friends loaded, given that the current window is a Friends page.
+     * This method has several assumptions in order to operate correctly:
+     * - the current page is the Friends page of some facebook user
      * - the display is a 1920 x 1080, running windows with 100% scaling
      * - the windows taskbar is at the default height
      * - chrome is maximized on the screen
@@ -181,18 +183,16 @@ public class Harvester {
      * - chrome's zoom level is default (100%)
      * - chrome's downloads bar (at the bottom of the page) is OPEN
      * - chrome's developer tools panel is CLOSED
-     * - the current page is the main page of a facebook profile
      * @return The name of the html file that was saved, or null if an error occurred.
      */
     public String harvestSingleFriendsPage() {
-        viewFriendsPage();        
         scrollToBottom();
         return fetchHtml();
     }
     
     /**
-     * Same as harvestSingleFriendsPage(), but you can pass in a url to the person's
-     * Friends page.
+     * Downloads the html document of a facebook user's Friends page, with all
+     * friends loaded.
      * @param url The url to the person's Friends page.
      * @return The name of the html file that was saved, or null if an error occurred.
      */
@@ -201,54 +201,60 @@ public class Harvester {
         scrollToBottom();
         return fetchHtml();
     }
-    
-    /**
-     * Copies the currently selected text to the system's clipboard using the robot,
-     * ensuring that the copy is completed before the function returns.
-     */
-    private void copyHighlightedTextToClipboard() {
-        // kind of hack-y solution: set the clipboard to be some String such that
-        // there is practically no chance for whatever we want to copy to equal that String.
-        // Then, if we detect a change in the clipboard contents after copying, then we know
-        // that copying to clipboard has finished. A (perhaps nicer) alternative is to
-        // clear the system clipboard first.
-        String randomString = Long.toString((long) (Math.random() * 100000000000000000L));
-        StringSelection ss = new StringSelection(randomString);
-        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
-        
-        String clipboardContent;
-        try {
-            clipboardContent = (String) Toolkit.getDefaultToolkit()
-                    .getSystemClipboard().getData(DataFlavor.stringFlavor);
-        } catch (HeadlessException | UnsupportedFlavorException | IOException e) {
-            e.printStackTrace();
-            return;
-        }
-        if (!clipboardContent.equals(randomString)) {
-            System.out.println("copyHighlightedTextToClipboard(): set clipboard content failed.");
-            return;
-        }
-        
-        // manual copying
-        robot.keyPress(KeyEvent.VK_CONTROL);
-        robot.keyPress(KeyEvent.VK_C);
-        robot.keyRelease(KeyEvent.VK_C);
-        robot.keyRelease(KeyEvent.VK_CONTROL);
-        
-        long startTime = System.nanoTime();
-        int timeout = 10;   // number of seconds before giving up and saying that copy failed.
-        while (clipboardContent.equals(randomString)) {
-            try {
-                Thread.sleep(WAIT_TIME_AFTER_CTRL_C);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if ((System.nanoTime() - startTime) / 1000000000 > timeout) {
-                System.out.println("copyHighlightedTextToClipboard(): timed out");
-                return;
-            }
-        }
-    }
+
+//    DEPRECATED
+//    /**
+//     * Copies the currently selected text to the system's clipboard using the robot,
+//     * ensuring that the copy is completed before the function returns.
+//     */
+//    private void copyHighlightedTextToClipboard() {
+//        // kind of hack-y solution: set the clipboard to be some String such that
+//        // there is practically no chance for whatever we want to copy to equal that String.
+//        // Then, if we detect a change in the clipboard contents after copying, then we know
+//        // that copying to clipboard has finished. A (perhaps nicer) alternative is to
+//        // clear the system clipboard first.
+//        String randomString = Long.toString((long) (Math.random() * 100000000000000000L));
+//        StringSelection ss = new StringSelection(randomString);
+//        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
+//        
+//        String clipboardContent;
+//        try {
+//            clipboardContent = (String) Toolkit.getDefaultToolkit()
+//                    .getSystemClipboard().getData(DataFlavor.stringFlavor);
+//        } catch (HeadlessException | UnsupportedFlavorException | IOException e) {
+//            e.printStackTrace();
+//            return;
+//        }
+//        if (!clipboardContent.equals(randomString)) {
+//            System.out.println("copyHighlightedTextToClipboard(): set clipboard content failed.");
+//            return;
+//        }
+//        
+//        // manual copying
+//        robot.keyPress(KeyEvent.VK_CONTROL);
+//        robot.keyPress(KeyEvent.VK_C);
+//        robot.keyRelease(KeyEvent.VK_C);
+//        robot.keyRelease(KeyEvent.VK_CONTROL);
+//        
+//        long startTime = System.nanoTime();
+//        int timeout = 15;   // number of seconds before giving up and saying that copy failed.
+//        while (clipboardContent.equals(randomString)) {
+//            try {
+//                // try again
+//                robot.keyPress(KeyEvent.VK_CONTROL);
+//                robot.keyPress(KeyEvent.VK_C);
+//                robot.keyRelease(KeyEvent.VK_C);
+//                robot.keyRelease(KeyEvent.VK_CONTROL);
+//                Thread.sleep(WAIT_TIME_AFTER_CTRL_C);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//            if ((System.nanoTime() - startTime) / 1000000000 > timeout) {
+//                System.out.println("copyHighlightedTextToClipboard(): timed out");
+//                return;
+//            }
+//        }
+//    }
     
     /**
      * Assumes that the current page is a facebook user's profile page and
@@ -297,69 +303,70 @@ public class Harvester {
         }
         return 0;
     }
-    
-    /**
-     * Assumes that the current page is the main page for a specific person
-     * and navigates to friends page
-     * @return 0 if no error occurred. 1 if could not locate friends page button.
-     * 2 if other error occurred.
-     */
-    private int viewFriendsPage() {
-        // make sure window is in focus
-        robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        
-        // copy the current chrome address bar
-        robot.keyPress(KeyEvent.VK_CONTROL);
-        robot.keyPress(KeyEvent.VK_L);
-        robot.keyRelease(KeyEvent.VK_L);
-        robot.keyRelease(KeyEvent.VK_CONTROL);
-        copyHighlightedTextToClipboard();
-        
-        String url;
-        try {
-            url = (String) Toolkit.getDefaultToolkit()
-                    .getSystemClipboard().getData(DataFlavor.stringFlavor);
-        } catch (HeadlessException | UnsupportedFlavorException | IOException e) {
-            e.printStackTrace();
-            return 2;
-        }
-        
-        String baseUrl = FriendsParser.getBaseUrl(url);
-        String friendsPageUrl = FriendsParser.getFriendsPageUrl(baseUrl);
-        
-        StringSelection ss = new StringSelection(friendsPageUrl);
-        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
-        
-        robot.keyPress(KeyEvent.VK_CONTROL);
-        robot.keyPress(KeyEvent.VK_L);
-        robot.keyRelease(KeyEvent.VK_L);
-        robot.keyRelease(KeyEvent.VK_CONTROL);
-        
-        robot.keyPress(KeyEvent.VK_CONTROL);
-        robot.keyPress(KeyEvent.VK_V);
-        robot.keyRelease(KeyEvent.VK_V);
-        robot.keyRelease(KeyEvent.VK_CONTROL);
-        
-        try {
-            Thread.sleep(WAIT_TIME_AFTER_CTRL_V);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        
-        robot.keyPress(KeyEvent.VK_ENTER);
-        robot.keyRelease(KeyEvent.VK_ENTER);
-        
-        // give the page some time to load
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        
-        return 0;
-    }
+
+//    DEPRECATED
+//    /**
+//     * Assumes that the current page is the main page for a specific person
+//     * and navigates to friends page
+//     * @return 0 if no error occurred. 1 if could not locate friends page button.
+//     * 2 if other error occurred.
+//     */
+//    private int viewFriendsPage() {
+//        // make sure window is in focus
+//        robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
+//        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+//        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+//        
+//        // copy the current chrome address bar
+//        robot.keyPress(KeyEvent.VK_CONTROL);
+//        robot.keyPress(KeyEvent.VK_L);
+//        robot.keyRelease(KeyEvent.VK_L);
+//        robot.keyRelease(KeyEvent.VK_CONTROL);
+//        copyHighlightedTextToClipboard();
+//        
+//        String url;
+//        try {
+//            url = (String) Toolkit.getDefaultToolkit()
+//                    .getSystemClipboard().getData(DataFlavor.stringFlavor);
+//        } catch (HeadlessException | UnsupportedFlavorException | IOException e) {
+//            e.printStackTrace();
+//            return 2;
+//        }
+//        
+//        String baseUrl = FriendsParser.getBaseUrl(url);
+//        String friendsPageUrl = FriendsParser.getFriendsPageUrl(baseUrl);
+//        
+//        StringSelection ss = new StringSelection(friendsPageUrl);
+//        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
+//        
+//        robot.keyPress(KeyEvent.VK_CONTROL);
+//        robot.keyPress(KeyEvent.VK_L);
+//        robot.keyRelease(KeyEvent.VK_L);
+//        robot.keyRelease(KeyEvent.VK_CONTROL);
+//        
+//        robot.keyPress(KeyEvent.VK_CONTROL);
+//        robot.keyPress(KeyEvent.VK_V);
+//        robot.keyRelease(KeyEvent.VK_V);
+//        robot.keyRelease(KeyEvent.VK_CONTROL);
+//        
+//        try {
+//            Thread.sleep(WAIT_TIME_AFTER_CTRL_V);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//        
+//        robot.keyPress(KeyEvent.VK_ENTER);
+//        robot.keyRelease(KeyEvent.VK_ENTER);
+//        
+//        // give the page some time to load
+//        try {
+//            Thread.sleep(3000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//        
+//        return 0;
+//    }
     
     /**
      * Scrolls the page to the bottom. May occasionally not make it all the way
@@ -441,36 +448,33 @@ public class Harvester {
         robot.keyRelease(KeyEvent.VK_S);
         robot.keyRelease(KeyEvent.VK_CONTROL);
         
-        // change the name of the file just in case, to avoid overriding message
+        // kind of hack-y: set the filename to be a random number such that the
+        // program is practically never going to assign the html files of two different
+        // people to be the same name
         try {
 			Thread.sleep(100);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-        robot.keyPress(KeyEvent.VK_HOME);
-        robot.keyRelease(KeyEvent.VK_HOME);
-        typeRandomDigit();
-        typeRandomDigit();
-        typeRandomDigit();
-        typeRandomDigit();
-        typeRandomDigit();
-        
-        // get the file name
-        robot.keyPress(KeyEvent.VK_CONTROL);
-        robot.keyPress(KeyEvent.VK_A);
-        robot.keyRelease(KeyEvent.VK_A);
-        robot.keyRelease(KeyEvent.VK_CONTROL);
-        copyHighlightedTextToClipboard();
-        
-        String htmlFilename;
-        try {
-            htmlFilename = (String) Toolkit.getDefaultToolkit()
-                    .getSystemClipboard().getData(DataFlavor.stringFlavor);
-        } catch (HeadlessException | UnsupportedFlavorException | IOException e) {
-            e.printStackTrace();
-            return null;
+        robot.keyPress(KeyEvent.VK_BACK_SPACE);
+        robot.keyRelease(KeyEvent.VK_BACK_SPACE);
+        String htmlFilename = "";
+        for (int i = 0; i < 20; i++) {
+            char digit = typeRandomDigit();
+            htmlFilename += digit;
         }
+        robot.keyPress(KeyEvent.VK_PERIOD);
+        robot.keyRelease(KeyEvent.VK_PERIOD);
+        robot.keyPress(KeyEvent.VK_H);
+        robot.keyRelease(KeyEvent.VK_H);
+        robot.keyPress(KeyEvent.VK_T);
+        robot.keyRelease(KeyEvent.VK_T);
+        robot.keyPress(KeyEvent.VK_M);
+        robot.keyRelease(KeyEvent.VK_M);
+        robot.keyPress(KeyEvent.VK_L);
+        robot.keyRelease(KeyEvent.VK_L);
         
+        // save the complete webpage (in order to save the dynamically generated html document
         robot.keyPress(KeyEvent.VK_TAB);
         robot.keyRelease(KeyEvent.VK_TAB);
         robot.keyPress(KeyEvent.VK_DOWN);

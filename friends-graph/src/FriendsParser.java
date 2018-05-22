@@ -21,11 +21,17 @@ import java.util.stream.Collectors;
  * These two cases are considered in many of the methods below.
  */
 public class FriendsParser {
+    
+    // tags that help to locate the source url of the html file
+    // the following String and char immediately precede and succeed (respectively) the html source url
+    private static String PRECEDES_SOURCE_URL = ")";
+    private static char SUCCEEDS_SOURCE_URL = ' ';
         
-    // tags that help to locate the current user's (owner of html file) id
-    // the following String and char immediately precede and succeed (respectively) the id of the current user
-    private static String PRECEDES_OWNER_ID = "https://www.facebook.com/";
-    private static char SUCCEEDS_OWNER_ID = '/';
+//    // tags that help to locate the current user's (owner of html file) id
+//    // the following String and char immediately precede and succeed (respectively) the id of the current user
+//    private static String PRECEDES_OWNER_ID = "https://www.facebook.com/";
+//    private static char SUCCEEDS_OWNER_ID_CUSTOM_ID = '/';  // case where user has a custom url/id
+//    private static char SUCCEEDS_OWNER_ID_NUMERIC_ID = '&'; // case where user has default facebook numeric id
     
     // tags that help to locate the current user's (owner of html file) name
     // the following tag indicates that we are coming up towards the user's name
@@ -142,18 +148,28 @@ public class FriendsParser {
         List<Person> result = new ArrayList<>();
         
         // get the owner user's information and add it to the results
-        if (!findString(br, PRECEDES_OWNER_ID)) { return null; }
-        String ownerId = readUntil(br, SUCCEEDS_OWNER_ID);
-        if (ownerId == null) { return null; }
+        if (!findString(br, PRECEDES_SOURCE_URL)) { return null; }
+        String sourceUrl = readUntil(br, SUCCEEDS_SOURCE_URL);
+        if (sourceUrl == null) { return null; }
         
+        // note that this section has slightly different functionality from getBaseUrl()
+        // sourceUrl has two forms:
+        // (1) https://www.facebook.com/profile.php?id=7777777&sk=friends
+        // (2) https://www.facebook.com/john.smith.35/friends
+        String ownerBaseUrl;
+        if (sourceUrl.contains("/profile.php?id=")) {
+            ownerBaseUrl = sourceUrl.split("&")[0];
+        } else {
+            int indexAfterBaseUrl = sourceUrl.length() - 8;
+            ownerBaseUrl = sourceUrl.substring(0, indexAfterBaseUrl);
+        }
+                
         if (!findString(br, SPAN_A_TAG)) { return null; }
         if (!findString(br, PRECEDES_OWNER_NAME)) { return null; }
         String ownerName = readUntil(br, SUCCEEDS_OWNER_NAME);
         if (ownerName == null) { return null; }
-        
-        String ownerUrl = "https://www.facebook.com/" + ownerId;
-        
-        result.add(new Person(ownerId, ownerName, ownerUrl));
+                
+        result.add(new Person(ownerName, ownerBaseUrl));
                 
         // add the rest of the friends
         boolean success;
@@ -182,14 +198,12 @@ public class FriendsParser {
             
             // special case: when account is deactivated, just skip this person
             if (friendBaseUrl == null) { continue; }
-            
-            String friendId = getIdFromBaseUrl(friendBaseUrl);
-            
+                        
             success = findString(br, PRECEDES_NAME);
             if (!success && !isEOF(br)) { return null; }
             String friendName = readUntil(br, SUCCEEDS_NAME);
             if (friendName == null) { return null; }
-            result.add(new Person(friendId, friendName, friendBaseUrl));
+            result.add(new Person(friendName, friendBaseUrl));
             
             if (result.size() >= maxToExtract + 1) { return result; }
         }
@@ -220,57 +234,39 @@ public class FriendsParser {
      * incorrectly becomes "https://www.facebook.com/john.smith.35/friends"
      */
     public static String getBaseUrl(String url) {
-        String potentialUrl = url.split("[\\?#]")[0];
+        // check for case when user's account is deactivated
+        // the url will have the form: "https://www.facebook.com/[logged in user id]/friends#",
+        // so we can identify it by the presence of a "/friends"
+        if (url.contains("/friends")) {
+            return null;
+        }
         
-        // check for special case when user doesn't have custom url
-        if (getIdFromBaseUrl(potentialUrl).equals("profile.php")) {
+        // check for case when user doesn't have custom url
+        if (url.substring(0, Math.min(url.length(), 40)).contains("/profile.php?id=")) {
             return url.split("&")[0];
         }
         
-        // check for special case when user's account is deactivated
-        // the url will have the form: "https://www.facebook.com/[logged in user id]/friends#",
-        // so we can identify it by the presence of a "/friends"
-        if (potentialUrl.contains("/friends")) {
-            return null;
-        }
-        return potentialUrl;
+        // user has custom url. the url has the form: "https://facebook.com/[custom_url]?[...]"
+        // where '?' represents either '?' or '#' and "[...]" represents trailing characters
+        return url.split("[\\?#]")[0];
     }
     
-    /**
-     * Given a baseUrl (such as one returned from getBaseUrl) with the form (without quotes):
-     * "https://www.facebook.com/john.smith.35" or
-     * "https://www.facebook.com/profile.php?id=7777777",
-     * returns the id, which is just the substring after the "https://www.facebook.com/"
-     * @param baseUrl The url with the form described above, or null if the url doesn't
-     * exist (for example, if the account is deactivated).
-     * @return The id of the person, or null if the account is deactivated.
-     */
-    public static String getIdFromBaseUrl(String baseUrl) {
-        if (baseUrl == null) { return null; }
-        
-        // "https://www.facebook.com/".length() = 25
-        return baseUrl.substring(25);
-    }
-    
-    /**
-     * Given a baseUrl (such as one returned from getBaseUrl) with the form (without quotes):
-     * "https://www.facebook.com/john.smith.35" or
-     * "https://www.facebook.com/profile.php?id=7777777",
-     * returns the url of the Friends page of that person.
-     * @param baseUrl The url with the form described above, or null if the account
-     * is deactivated.
-     * @return The url of the Friends page of the profile specified by baseUrl, or
-     * null if baseUrl is null.
-     */
-    public static String getFriendsPageUrl(String baseUrl) {
-        if (baseUrl == null) { return null; }
-        
-        if (baseUrl.contains("profile.php?")) {
-            return baseUrl + "&sk=friends";
-        } else {
-            return baseUrl + "/friends";
-        }
-    }
+//    /**
+//     * Given a baseUrl (such as one returned from getBaseUrl) with the form (without quotes):
+//     * "https://www.facebook.com/john.smith.35" or
+//     * "https://www.facebook.com/profile.php?id=7777777",
+//     * returns the id, which is just the substring after the "https://www.facebook.com/"
+//     * in the case of custom urls or is the numeric id if there is no custom url.
+//     * @param baseUrl The url with the form described above, or null if the url doesn't
+//     * exist (for example, if the account is deactivated).
+//     * @return The id of the person, or null if the account is deactivated.
+//     */
+//    public static String getIdFromBaseUrl(String baseUrl) {
+//        if (baseUrl == null) { return null; }
+//        
+//        // "https://www.facebook.com/".length() = 25
+//        return baseUrl.substring(25);
+//    }
     
     /**
      * Checks whether the given Reader has reached EOF without advancing file pointer

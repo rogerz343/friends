@@ -80,7 +80,7 @@ public class Harvester {
             return false;
         }
         Person rootUser = rootUserFriends.get(0);
-        String outputFile = Paths.get(outputDir, rootUser.id).toAbsolutePath().toString();
+        String outputFile = Paths.get(outputDir, rootUser.getUniqueKey()).toAbsolutePath().toString();
         try {
             FriendsParser.saveToFile(rootUserFriends, outputFile);
         } catch (IOException e) {
@@ -99,7 +99,7 @@ public class Harvester {
             Person user = downloadQueue.remove();
             if (finishedPeople.contains(user)) { continue; }
             
-            String userHtmlName = harvestSingleFriendsPage(user.url);
+            String userHtmlName = harvestSingleFriendsPage(user);
             
             // retrieve the html file when it is ready
             Path userHtmlPath = Paths.get(downloadsDir, userHtmlName).toAbsolutePath();
@@ -113,7 +113,7 @@ public class Harvester {
                 e1.printStackTrace();
                 continue;
             }
-            outputFile = Paths.get(outputDir, user.id).toAbsolutePath().toString();
+            outputFile = Paths.get(outputDir, user.getUniqueKey()).toAbsolutePath().toString();
             try {
                 if (!FriendsParser.saveToFile(userFriends, outputFile)) {
                     System.out.println("harvestAllPages(): " + outputFile + " already exists. Now using existing file.");
@@ -188,22 +188,22 @@ public class Harvester {
     /**
      * Downloads the html document of a facebook user's Friends page, with all
      * friends loaded.
-     * @param url The url to the person's Friends page.
+     * @param person The Person whose Friends page html document we want to harvest.
      * @return The name of the html file that was saved, or null if an error occurred.
      */
-    public String harvestSingleFriendsPage(String url) {
-        viewFriendsPage(url);
+    public String harvestSingleFriendsPage(Person person) {
+        viewFriendsPage(person);
         scrollToBottom();
         return fetchHtml();
     }
     
     /**
-     * Assumes that the current page is a facebook user's profile page and
-     * navigates to the friends page, given its url.
-     * @param url The url of the Friends page of the desired person
+     * Assumes that the current page is a facebook user's main profile page and
+     * navigates to the Friends page, given the person.
+     * @param person The Person whose Friends page we want to navigate to.
      * @return 0 if no error occurred, 1 otherwise.
      */
-    private int viewFriendsPage(String url) {
+    private int viewFriendsPage(Person person) {
         // make sure window is in focus
         robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
@@ -218,7 +218,7 @@ public class Harvester {
         robot.keyRelease(KeyEvent.VK_BACK_SPACE);
         
         // put next person's page into chrome address
-        String urlFriendsPage = FriendsParser.getFriendsPageUrl(url);
+        String urlFriendsPage = person.getFriendsPageUrl();
         StringSelection ss = new StringSelection(urlFriendsPage);
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
         

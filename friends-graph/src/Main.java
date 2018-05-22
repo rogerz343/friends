@@ -18,7 +18,7 @@ public class Main {
         System.out.println("Program started at: " + LocalDateTime.now());
         
     	String DOWNLOADS_DIR = "D:\\Robin Zhang\\Downloads\\";
-    	String OUTPUT_DIR = "D:\\Robin Zhang\\Desktop\\save\\";
+    	String OUTPUT_DIR = "D:\\Robin Zhang\\Desktop\\savev2\\";
     	try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {

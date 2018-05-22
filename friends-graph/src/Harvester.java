@@ -80,9 +80,9 @@ public class Harvester {
             return false;
         }
         Person rootUser = rootUserFriends.get(0);
-        String outputFile = Paths.get(outputDir, rootUser.getUniqueKey()).toAbsolutePath().toString();
+        String outputFile = Paths.get(outputDir, rootUser.getUniqueKey() + ".friends").toAbsolutePath().toString();
         try {
-            FriendsHtmlParser.saveToFile(rootUserFriends, outputFile);
+            FriendsFiles.saveToFile(rootUserFriends, outputFile);
         } catch (IOException e) {
             e.printStackTrace();
             return false;
@@ -113,11 +113,11 @@ public class Harvester {
                 e1.printStackTrace();
                 continue;
             }
-            outputFile = Paths.get(outputDir, user.getUniqueKey()).toAbsolutePath().toString();
+            outputFile = Paths.get(outputDir, user.getUniqueKey() + ".friends").toAbsolutePath().toString();
             try {
-                if (!FriendsHtmlParser.saveToFile(userFriends, outputFile)) {
+                if (!FriendsFiles.saveToFile(userFriends, outputFile)) {
                     System.out.println("harvestAllPages(): " + outputFile + " already exists. Now using existing file.");
-                    userFriends = FriendsHtmlParser.loadFromFile(outputFile);
+                    userFriends = FriendsFiles.loadFromFile(outputFile);
                 }
             } catch (IOException e) {
                 e.printStackTrace();

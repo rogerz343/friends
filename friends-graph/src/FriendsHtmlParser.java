@@ -133,12 +133,6 @@ public class FriendsHtmlParser {
         // add the rest of the friends
         boolean success;
         while (!isEOF(br)) {
-            // TODO: for debugging; remove this
-            numLoops++;
-            if (numLoops > 200) {
-                System.out.println("extractFriendsInfo(): stuck in !EOF loop.");
-            }
-            
             // logic on error checking: if the tag isn't found, then either we hit the EOF
             // (which is fine) or something actually went wrong (not fine, so return null)
             success = findString(br, LI_TAG);

@@ -27,7 +27,26 @@ import java.util.stream.Collectors;
  */
 public class Harvester {
     
+    // indicates whether or not this Harvester instance was created from a
+    // previous save file or brand new
+    private boolean isNewHarvester;
+    
+    public final int maxNumPeople;
+    public final int maxPerPerson;
+    public final String downloadsDir;
+    public final String outputDir;
+    
+    private int numDownloaded;
+    private Set<Person> finishedPeople;
+    private Deque<Person> downloadQueue;
+    
     private InterruptibleRobot robot;
+    
+    private static String LOG_FILE = "harvester.log";
+    private static String HARVESTER_STATE_FILE = "harvester.state";
+    
+    // number of seconds to wait before an operation is considered as failed
+    private static int timeout = 180;
     
     private static int SCROLLBAR_X = 1910;
     private static int SCROLLBAR_Y = 972; // 1020 if downloads tab is closed
@@ -40,27 +59,87 @@ public class Harvester {
     // not sure if we actually need this
 //    private static int WAIT_TIME_AFTER_CTRL_V = 500;
     
-    public Harvester() throws AWTException {
+    /**
+     * Constructs a brand new Harvester with the given parameters
+     * @param maxNumPeople The maximum number of people to download pages from.
+     * @param maxPerPerson The maximum number of friends extracted from each person's friends
+     * page, ordered by however facebook orders friendship.
+     * @param downloadsDir The filesystem path to the default chrome download directory.
+     * @param outputDir The filesystem path to a directory where all of the output files that
+     * result from this class's methods will be saved.
+     * @throws AWTException
+     * @throws IOException 
+     */
+    public Harvester(int maxNumPeople, int maxPerPerson,
+            String downloadsDir, String outputDir) throws AWTException, IOException {
+        this.maxNumPeople = maxNumPeople;
+        this.maxPerPerson = maxPerPerson;
+        this.downloadsDir = downloadsDir;
+        this.outputDir = outputDir;
+        
+        Path logFilePath = Paths.get(outputDir, LOG_FILE);
+        Files.deleteIfExists(logFilePath);
+        Files.createFile(logFilePath);
+        
+        numDownloaded = 0;
+        finishedPeople = new HashSet<>();
+        downloadQueue = new ArrayDeque<>();
+        
         robot = new InterruptibleRobot();
         robot.setAutoWaitForIdle(true);
         robot.setAutoDelay(200);
+        
+        isNewHarvester = true;
+    }
+    
+    /**
+     * Looks for a file in dir called HARVESTER_STATE_FILE and reads in the
+     * state parameters. Constructs a new Harvester based on those parameters.
+     * @param dir The directory containing the HARVESTER_STATE_FILE file.
+     * @throws IOException 
+     */
+    public Harvester(String dir) throws IOException {
+        Path stateFilePath = Paths.get(dir, HARVESTER_STATE_FILE);
+        List<String> lines = Files.readAllLines(stateFilePath);
+        
+        this.maxNumPeople = Integer.parseInt(lines.get(0));
+        this.maxPerPerson = Integer.parseInt(lines.get(1));
+        this.downloadsDir = lines.get(2);
+        this.outputDir = lines.get(3);
+        this.numDownloaded = Integer.parseInt(lines.get(4));
+        
+        int startLine;
+        int currLine = 5;
+        
+        int numFinished = Integer.parseInt(lines.get(currLine));
+        currLine++;
+        startLine = currLine;
+        this.finishedPeople = new HashSet<>();
+        for (currLine = startLine; currLine < startLine + numFinished; currLine++) {
+            finishedPeople.add(Person.fromString(lines.get(currLine)));
+        }
+        
+        int numInQueue = Integer.parseInt(lines.get(currLine));
+        currLine++;
+        this.downloadQueue = new ArrayDeque<>();
+        startLine = currLine;
+        for (; currLine < startLine + numInQueue; currLine++) {
+            downloadQueue.add(Person.fromString(lines.get(currLine)));
+        }
+        
+        isNewHarvester = false;
     }
     
     /**
      * Performs a breadth-first search of your friends network, starting at the person
      * whose profile page is open on chrome (and on screen) when this method is called.
-     * @param maxNumPeople The maximum number of people to download pages from.
-     * @param maxPerPerson The maximum number of friends extracted from each person's friends
-     * page, ordered by however facebook orders friendship.
-     * @param downloadsDir The filesystem path to the default chrome download directory
-     * @param outputDir The filesystem path to a directory where the output files (lists
-     * of a user and his or her friends) will be saved.
+     * Uses the instance variable parameters (those given when this Harvester was constructed).
      * @return true if no error occurred, false otherwise.
      */
-    public boolean harvestAllPages(int maxNumPeople, int maxPerPerson, String downloadsDir, String outputDir) {
-        int timeout = 180;
-        
-        maxNumPeople = Math.min(maxNumPeople, 10000000);
+    public boolean beginNewHarvest() {
+        if (!isNewHarvester) {
+            return false;
+        }
         
         // first, download the information from the source (usually your own fb page)
         String rootUserHtmlName = harvestSingleFriendsPage();
@@ -71,7 +150,7 @@ public class Harvester {
         
         List<Person> rootUserFriends;
         try {
-            rootUserFriends = FriendsHtmlParser.extractFriendsInfo(rootUserHtmlPath.toString(), maxPerPerson, 300);
+            rootUserFriends = FriendsHtmlParser.extractFriendsInfo(rootUserHtmlPath.toString(), maxPerPerson, 30);
         } catch (FileNotFoundException e2) {
             e2.printStackTrace();
             return false;
@@ -85,46 +164,27 @@ public class Harvester {
             return false;
         }
         
-        Set<Person> finishedPeople = new HashSet<>();
+        numDownloaded++;
+        
         finishedPeople.add(rootUser);
-        Deque<Person> downloadQueue = new ArrayDeque<>();
         for (Person p : rootUserFriends) {
             if (!finishedPeople.contains(p)) { downloadQueue.add(p); }
         }
-        
-        HarvestState hs = new HarvestState(maxNumPeople, maxPerPerson,
-                downloadsDir, outputDir,
-                1, finishedPeople, downloadQueue);
-        return harvestAllPages(hs);
+        return harvestAllPages();
     }
     
     // TODO: add error checking
     /**
-     * Performs a breadth-first search of your friends network, with the given HarvestState
-     * (see documention in HarvestState for more details). When this method is called, a facebook
-     * profile page should be open on the screen. For each Person in the BFS queue, this
-     * method downloads that person's Friends page (.html file). Then, this method will save
-     * a file (corresponding to that Person and his/her friends) to `hs.outputDir`. The process
-     * is repeated for all of this person's friends. After every Person is processed, the
-     * state of this method is saved as a file into `hs.outputDir` so that it the data processing
-     * can be interrupted and resume later on.
-     * @param hs The HarvestState previously saved.
+     * Performs a breadth-first search of your friends network, with the parameters specified
+     * by the instance variables. A facebook profile page should be open on the screen when
+     * this method is called. For each Person in `downloadQueue`, this method downloads that
+     * person's Friends page (.html file). Then, this method will save a file (corresponding
+     * to that Person and his/her friends) to `outputDir`. The process is repeated for all of
+     * this person's friends. The state of this Harvester is periodically saved as a file in
+     * `outputDir` so that it the data processing can be interrupted and resume later on.
      * @return true if no error occurred, false otherwise.
-     * 
      */
-    public boolean harvestAllPages(HarvestState hs) {
-        int timeout = 180;
-        
-        int maxNumPeople = hs.maxNumPeople;
-        int maxPerPerson = hs.maxPerPerson;
-        String downloadsDir = hs.downloadsDir;
-        String outputDir = hs.outputDir;
-        int numDownloaded = hs.numDownloaded;
-        Set<Person> finishedPeople = hs.finishedPeople;
-        Deque<Person> downloadQueue = hs.downloadQueue;
-        
-        maxNumPeople = Math.min(maxNumPeople, 10000000);
-        
+    public boolean harvestAllPages() {
         while (numDownloaded < maxNumPeople && !downloadQueue.isEmpty()) {
             Person user = downloadQueue.peek();
             if (finishedPeople.contains(user)) {
@@ -145,7 +205,7 @@ public class Harvester {
             
             List<Person> userFriends;
             try {
-                userFriends = FriendsHtmlParser.extractFriendsInfo(userHtmlPath.toString(), maxPerPerson, 300);
+                userFriends = FriendsHtmlParser.extractFriendsInfo(userHtmlPath.toString(), maxPerPerson, 30);
             } catch (FileNotFoundException e1) {
                 // could not open this user's profile: just skip this person
                 // without adding to finishedPeople
@@ -193,14 +253,10 @@ public class Harvester {
             
             // state state every now and then
             if (numDownloaded % 5 == 0) {
-                HarvestState hsNew = new HarvestState(maxNumPeople, maxPerPerson,
-                    downloadsDir, outputDir,
-                    numDownloaded,
-                    finishedPeople, downloadQueue);
                 try {
-                    saveHarvestState(hsNew);
+                    saveHarvester();
                 } catch (IOException e) {
-                    // could not save HarvestState for some reason, just continue
+                    // could not save Harvester state for some reason, just continue
                     // and hopefully it'll save correctly during the next loop
                     e.printStackTrace();
                 }
@@ -212,58 +268,35 @@ public class Harvester {
     }
     
     /**
-     * Looks for a file in outputDir called "harvestProgress.state" and reads in the
-     * state parameters.
-     * @param dir The directory containing the "harvestProgress.state" file.
-     * @return The state of the harvestAllPages() method that was saved previously.
+     * An alias for the Harvester(String dir) constructor.
+     * @param dir The parameter to pass into the Harvester(String dir) constructor.
+     * @return A new Harvester constructed using the `dir` parameter.
      * @throws IOException 
      */
-    private HarvestState loadHarvestState(String dir) throws IOException {
-        Path stateFilePath = Paths.get(dir, "harvestProgress.state");
-        List<String> lines = Files.readAllLines(stateFilePath);
-        
-        int maxNumPeople = Integer.parseInt(lines.get(0));
-        int maxPerPerson = Integer.parseInt(lines.get(1));
-        String downloadsDir = lines.get(2);
-        String outputDir = lines.get(3);
-        int numDownloaded = Integer.parseInt(lines.get(4));
-        int numFinished = Integer.parseInt(lines.get(5));
-        
-        int currLine;
-        Set<Person> finishedPeople = new HashSet<>();
-        for (currLine = 6; currLine < 6 + numFinished; currLine++) {
-            finishedPeople.add(Person.fromString(lines.get(currLine)));
-        }
-        
-        int numInQueue = Integer.parseInt(lines.get(currLine));
-        currLine++;
-        Deque<Person> downloadQueue = new ArrayDeque<>();
-        int startLine = currLine;
-        for (; currLine < startLine + numInQueue; currLine++) {
-            downloadQueue.add(Person.fromString(lines.get(currLine)));
-        }
-        
-        return new HarvestState(maxNumPeople, maxPerPerson,
-                downloadsDir, outputDir,
-                numDownloaded,
-                finishedPeople, downloadQueue);
+    public static Harvester loadHarvester(String dir) throws IOException {
+        return new Harvester(dir);
     }
     
-    private void saveHarvestState(HarvestState hs) throws IOException {
-        Path harvestProgressPath = Paths.get(hs.outputDir, "harvestProgress.state");
+    /**
+     * Saves all of the necessary parameters of this Harvester to a file that
+     * can be read in by the Harvester(String dir) constructor
+     * @throws IOException
+     */
+    private void saveHarvester() throws IOException {
+        Path harvestProgressPath = Paths.get(outputDir, HARVESTER_STATE_FILE);
                 
         List<String> lines = new ArrayList<>();
-        lines.add(Integer.toString(hs.maxNumPeople));
-        lines.add(Integer.toString(hs.maxPerPerson));
-        lines.add(hs.downloadsDir);
-        lines.add(hs.outputDir);
-        lines.add(Integer.toString(hs.numDownloaded));
-        lines.add(Integer.toString(hs.finishedPeople.size()));
-        for (Person p : hs.finishedPeople) {
+        lines.add(Integer.toString(maxNumPeople));
+        lines.add(Integer.toString(maxPerPerson));
+        lines.add(downloadsDir);
+        lines.add(outputDir);
+        lines.add(Integer.toString(numDownloaded));
+        lines.add(Integer.toString(finishedPeople.size()));
+        for (Person p : finishedPeople) {
             lines.add(p.toString());
         }
-        lines.add(Integer.toString(hs.downloadQueue.size()));
-        for (Person p : hs.downloadQueue) {
+        lines.add(Integer.toString(downloadQueue.size()));
+        for (Person p : downloadQueue) {
             lines.add(p.toString());
         }
         
@@ -274,50 +307,13 @@ public class Harvester {
     }
     
     /**
-     * Captures the state of the harvestAllPages() methods in one object.
-     * @author roger
-     *
-     */
-    private class HarvestState {
-        // the max number of people to download pages from
-        public int maxNumPeople;
-        // the max number of friends extracted from each person's friends page, ordered by
-        // however facebook orders friendship
-        public int maxPerPerson;
-        // the filesystem path to the default chrome download directory
-        public String downloadsDir;
-        // the filesystem path to a directory where the output files (lists of a user and
-        // his or her friends) will be saved
-        public String outputDir;
-        // the number of pages already downloaded
-        public int numDownloaded;
-        // the set of `Person`s whose Friends pages have already been downloaded
-        public Set<Person> finishedPeople;
-        // the BFS queue of `Person`s to download/process info from
-        public Deque<Person> downloadQueue;
-        
-        public HarvestState(int maxNumPeople, int maxPerPerson,
-            String downloadsDir, String outputDir,
-            int numDownloaded,
-            Set<Person> finishedPeople, Deque<Person> downloadQueue) {
-            this.maxNumPeople = maxNumPeople;
-            this.maxPerPerson = maxPerPerson;
-            this.downloadsDir = downloadsDir;
-            this.outputDir = outputDir;
-            this.numDownloaded = numDownloaded;
-            this.finishedPeople = finishedPeople;
-            this.downloadQueue = downloadQueue;
-        }
-    }
-    
-    /**
      * Blocks the program until the file specified by filepath exists.
      * @param filepath The path to the file that we want to exist.
      * @param timeout The number of seconds that the program will wait for
      * before timing out and returning an error.
      * @return true if the file is found, false otherwise.
      */
-    private boolean waitForDownload(Path filepath, int timeout) {
+    private static boolean waitForDownload(Path filepath, int timeout) {
         int secondsWaited = 0;  // not the most accurate, but good enough
         
         // probably don't need Files.isReadable() condition, but hey why not

@@ -21,7 +21,7 @@ The program (currently) only runs correctly on Windows 10. Note that there could
 
 ### Development/testing/benchmarking notes: using i5-7400 (2 core 4 thread @ 3.00 GHz)
 - `Harvester(maxNumPeople=250, maxPerPerson=100)`: 8440 seconds
-- `findCliques()` with `|V| = (5660/250)`, `|E| = 17600` (where `(a/b)` means `a` total nodes and `b` nodes that we have complete information about): 110 seconds
+- `findCliques()` with `|V| = (5660/250)`, `|E| = 17600` (where `(a/b)` means `a` total nodes and `b` nodes that we have complete information about): 252 seconds
 - 250 small .html files along with the _files source folder: 3.5 GB
 
 ## TODO, bugs, and other possible improvements

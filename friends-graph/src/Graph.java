@@ -15,7 +15,7 @@ public class Graph<V> {
     
     private Map<V, List<V>> adjList = new HashMap<>();
     
-    // global variables used for cliques algorithm
+    // global variable used for cliques algorithm
     private List<List<V>> maximalCliques = null;
     
     /**
@@ -46,12 +46,22 @@ public class Graph<V> {
     }
     
     /**
-     * Creates a graph with the adjacency list `inputAdjList`
+     * Creates a graph with the adjacency list `inputAdjList`. If the adjacency
+     * list contains a V that is not a key but in one of the List<V>, then it
+     * will automatically be added as a node. Also ensures no duplicate edges.
      * @param inputAdjList The input adjacency list
      */
     public Graph(Map<V, List<V>> inputAdjList) {
         for (V v : inputAdjList.keySet()) {
-            adjList.put(v, inputAdjList.get(v));
+            adjList.put(v, new ArrayList<>());
+            List<V> vNeighbors = inputAdjList.get(v);
+            for (V vNeighbor : vNeighbors) {
+                if (!adjList.containsKey(vNeighbor)) {
+                    adjList.put(vNeighbor, new ArrayList<>());
+                }
+                if (!adjList.get(v).contains(vNeighbor)) { adjList.get(v).add(vNeighbor); }
+                if (!adjList.get(vNeighbor).contains(v)) { adjList.get(vNeighbor).add(v); }
+            }
         }
     }
     

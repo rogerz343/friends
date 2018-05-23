@@ -64,7 +64,7 @@ public class Graph<V> {
         for (List<V> l : adjList.values()) {
             numEdges += l.size();
         }
-        return numEdges;
+        return numEdges / 2;
     }
     
     /**

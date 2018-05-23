@@ -531,8 +531,8 @@ public class Harvester {
      */
     private String fetchHtml() {
         robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
-        robot.mousePress(InputEvent.BUTTON2_DOWN_MASK);
-        robot.mouseRelease(InputEvent.BUTTON2_DOWN_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         
         robot.keyPress(KeyEvent.VK_CONTROL);
         robot.keyPress(KeyEvent.VK_S);

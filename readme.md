@@ -19,8 +19,11 @@ The program (currently) only runs correctly on Windows 10. Note that there could
 - More detail about how classes are implemented can be found in the source code.
 - Many design choices made here may seem unoptimal, but were chosen given the restriction that facebook doesn't (to my knowledge as of now) allow access to other people's friends through an API and they also have some server-side prevention measures against automated information retrieval (ex: using a wget). Still, there are clearly better ways to implement some of this program's functionalities, but the current implementation is simple to understand (not dependent on any non-standard libraries) and "good enough".
 
-### Development/testing notes
-- running `findCliques()` on a graph with 250 nodes and 23000 edges took 190 seconds (approx 3 minutes)
+### Development/testing/benchmarking notes: using i5-7400 (2 core 4 thread @ 3.00 GHz)
+- `Harvester(maxNumPeople=250, maxPerPerson=100)`: 8440 seconds
+- `findCliques()` with `|V| = 250`, `|E| = 11700`: 190 seconds
+- `findCliques()` with `|V| = 250`, `|E| = 11700`: 110 seconds
+- 250 small .html files along with the _files source folder: 3.5 GB
 
 ## TODO, bugs, and other possible improvements
 - Revamp file I/O to only use java's files and paths libraries (`java.nio.\*`)

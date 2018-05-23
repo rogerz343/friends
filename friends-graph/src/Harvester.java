@@ -6,14 +6,18 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A class used to download html documents corresponding to a facebook user's "Friends" page,
@@ -34,7 +38,7 @@ public class Harvester {
     
     // time to wait for Windows to paste text to and from clipboard, in milliseconds
     // not sure if we actually need this
-    private static int WAIT_TIME_AFTER_CTRL_V = 500;
+//    private static int WAIT_TIME_AFTER_CTRL_V = 500;
     
     public Harvester() throws AWTException {
         robot = new InterruptibleRobot();
@@ -42,23 +46,17 @@ public class Harvester {
         robot.setAutoDelay(200);
     }
     
-    // TODO: add error checking
     /**
-     * Performs a breadth-first search of your friends network starting with whoever's profile
-     * main page is currently open on the screen (usually your own). For each person, this
-     * method downloads their Friends page .html file. Additionally, this method will save
-     * files corresponding to a Person and their friends (using FriendsParser.saveToFile)
+     * Performs a breadth-first search of your friends network, starting at the person
+     * whose profile page is open on chrome (and on screen) when this method is called.
      * @param maxNumPeople The maximum number of people to download pages from. Cannot be
      * larger than 10000000.
-     * @param maxPerPerson The maximum number of friends extracted from each person's friends page.
-     * For example, if this is set to 200, then each person will have 200 friends. Note that
-     * facebook seems to already sort friends by some measure of "closeness" or "interaction", so
-     * this will gather the `maxPerPerson` "best" friends, which is beneficial in some cases.
+     * @param maxPerPerson The maximum number of friends extracted from each person's friends
+     * page, ordered by however facebook orders friendship.
      * @param downloadsDir The filesystem path to the default chrome download directory
      * @param outputDir The filesystem path to a directory where the output files (lists
      * of a user and his or her friends) will be saved.
      * @return true if no error occurred, false otherwise.
-     * 
      */
     public boolean harvestAllPages(int maxNumPeople, int maxPerPerson, String downloadsDir, String outputDir) {
         int timeout = 180;
@@ -94,7 +92,41 @@ public class Harvester {
         for (Person p : rootUserFriends) {
             if (!finishedPeople.contains(p)) { downloadQueue.add(p); }
         }
-        int numDownloaded = 1;
+        return harvestAllPages(maxNumPeople, maxPerPerson,
+                downloadsDir, outputDir,
+                1, finishedPeople, downloadQueue);
+    }
+    
+    // TODO: add error checking
+    /**
+     * Performs a breadth-first search of your friends network, where the current BFS queue
+     * `downloadQueue` is given as a parameter. When this method is called, the a facebook
+     * profile page should be open on the screen. For each Person in the BFS queue, this
+     * method downloads that person's Friends page (.html file). Then, this method will save
+     * a file to `outputDir` corresponding to that Person and his/her friends. The process
+     * is repeated for all of this person's friends. After every Person is processed, the
+     * state of this method is saved as a file into outputDir so that it the data processing
+     * can be interrupted and resume later on.
+     * @param maxNumPeople The maximum number of people to download pages from. Cannot be
+     * larger than 10000000.
+     * @param maxPerPerson The maximum number of friends extracted from each person's friends
+     * page, ordered by however facebook orders friendship.
+     * @param downloadsDir The filesystem path to the default chrome download directory
+     * @param outputDir The filesystem path to a directory where the output files (lists
+     * of a user and his or her friends) will be saved.
+     * @param numDownloaded The number of pages already downloaded before calling this method.
+     * @param finishedPeople The set of `Person`s whose Friends pages have already been downloaded.
+     * @param downloadQueue The BFS queue of Persons to consider.
+     * @return true if no error occurred, false otherwise.
+     * 
+     */
+    public boolean harvestAllPages(int maxNumPeople, int maxPerPerson,
+            String downloadsDir, String outputDir,
+            int numDownloaded,
+            Set<Person> finishedPeople, Deque<Person> downloadQueue) {
+        int timeout = 180;
+        maxNumPeople = Math.min(maxNumPeople, 10000000);
+        
         while (numDownloaded < maxNumPeople && !downloadQueue.isEmpty()) {
             Person user = downloadQueue.remove();
             if (finishedPeople.contains(user)) { continue; }
@@ -113,10 +145,12 @@ public class Harvester {
                 e1.printStackTrace();
                 continue;
             }
-            outputFile = Paths.get(outputDir, user.getUniqueKey() + ".friends").toAbsolutePath().toString();
+            String outputFile = Paths.get(outputDir, user.getUniqueKey() + ".friends").toAbsolutePath().toString();
             try {
                 if (!FriendsFiles.saveToFile(userFriends, outputFile)) {
-                    System.out.println("harvestAllPages(): " + outputFile + " already exists. Now using existing file.");
+                    System.out.println("harvestAllPages(): "
+                            + outputFile
+                            + " already exists. Now using existing file.");
                     userFriends = FriendsFiles.loadFromFile(outputFile);
                 }
             } catch (IOException e) {
@@ -138,6 +172,96 @@ public class Harvester {
             // TODO: delete the .js, .css, etc. source folders associated with the html document
         }
         return true;
+    }
+    
+    /**
+     * Looks for a file in outputDir called "harvestProgress.state" and reads in the
+     * state parameters.
+     * @param dir The directory containing the "harvestProgress.state" file.
+     * @return The state of the harvestAllPages() method that was saved previously.
+     * @throws IOException 
+     */
+    private HarvestState loadHarvestState(String dir) throws IOException {
+        Path stateFilePath = Paths.get(dir, "harvestProgress.state");
+        List<String> lines = Files.readAllLines(stateFilePath);
+        
+        int maxNumPeople = Integer.parseInt(lines.get(0));
+        int maxPerPerson = Integer.parseInt(lines.get(1));
+        String downloadsDir = lines.get(2);
+        String outputDir = lines.get(3);
+        int numDownloaded = Integer.parseInt(lines.get(4));
+        int numFinished = Integer.parseInt(lines.get(5));
+        
+        int currLine;
+        Set<Person> finishedPeople = new HashSet<>();
+        for (currLine = 6; currLine < 6 + numFinished; currLine++) {
+            finishedPeople.add(Person.fromString(lines.get(currLine)));
+        }
+        
+        int numInQueue = Integer.parseInt(lines.get(currLine));
+        currLine++;
+        Deque<Person> downloadQueue = new ArrayDeque<>();
+        int startLine = currLine;
+        for (; currLine < startLine + numInQueue; currLine++) {
+            downloadQueue.add(Person.fromString(lines.get(currLine)));
+        }
+        
+        return new HarvestState(maxNumPeople, maxPerPerson,
+                downloadsDir, outputDir,
+                numDownloaded,
+                finishedPeople, downloadQueue);
+    }
+    
+    private void saveHarvestState(HarvestState hs) throws IOException {
+        Path harvestProgressPath = Paths.get(hs.outputDir, "harvestProgress.state");
+                
+        List<String> lines = new ArrayList<>();
+        lines.add(Integer.toString(hs.maxNumPeople));
+        lines.add(Integer.toString(hs.maxPerPerson));
+        lines.add(hs.downloadsDir);
+        lines.add(hs.outputDir);
+        lines.add(Integer.toString(hs.numDownloaded));
+        lines.add(Integer.toString(hs.finishedPeople.size()));
+        for (Person p : hs.finishedPeople) {
+            lines.add(p.toString());
+        }
+        lines.add(Integer.toString(hs.downloadQueue.size()));
+        for (Person p : hs.downloadQueue) {
+            lines.add(p.toString());
+        }
+        
+        Files.write(harvestProgressPath, lines,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE);
+    }
+    
+    /**
+     * Captures the state of the harvestAllPages() methods in one object.
+     * @author roger
+     *
+     */
+    private class HarvestState {
+        public int maxNumPeople;
+        public int maxPerPerson;
+        public String downloadsDir;
+        public String outputDir;
+        public int numDownloaded;
+        public Set<Person> finishedPeople;
+        public Deque<Person> downloadQueue;
+        
+        public HarvestState(int maxNumPeople, int maxPerPerson,
+            String downloadsDir, String outputDir,
+            int numDownloaded,
+            Set<Person> finishedPeople, Deque<Person> downloadQueue) {
+            this.maxNumPeople = maxNumPeople;
+            this.maxPerPerson = maxPerPerson;
+            this.downloadsDir = downloadsDir;
+            this.outputDir = outputDir;
+            this.numDownloaded = numDownloaded;
+            this.finishedPeople = finishedPeople;
+            this.downloadQueue = downloadQueue;
+        }
     }
     
     /**
@@ -351,7 +475,7 @@ public class Harvester {
         robot.keyRelease(KeyEvent.VK_V);
         robot.keyRelease(KeyEvent.VK_CONTROL);
         
-        // save the complete webpage (in order to save the dynamically generated html document
+        // save the complete webpage (in order to save the dynamically generated html document)
         robot.keyPress(KeyEvent.VK_TAB);
         robot.keyRelease(KeyEvent.VK_TAB);
         robot.keyPress(KeyEvent.VK_DOWN);

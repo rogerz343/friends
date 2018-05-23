@@ -1,13 +1,10 @@
 import java.awt.AWTException;
-import java.awt.Robot;
 import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +19,7 @@ import java.util.stream.Collectors;
 public class Main {
     
     static String DOWNLOADS_DIR = "D:\\Robin Zhang\\Downloads\\";
-    static String OUTPUT_DIR = "D:\\Robin Zhang\\Desktop\\savev1\\";
+    static String OUTPUT_DIR = "D:\\Robin Zhang\\Desktop\\large borg desktop\\save\\";
     
     // TODO: add a GUI
     public static void main(String[] args) throws AWTException, IOException {
@@ -39,8 +36,7 @@ public class Main {
         Graph<Person> graph = loadIntoGraph(OUTPUT_DIR);
         System.out.println("Number of nodes: " + graph.getNumNodes());
         System.out.println("Number of edges: " + graph.getNumEdges());
-        List<List<Person>> cliques = graph.findCliques();
-        cliques.sort((l1, l2) -> l1.size() - l2.size());
+        List<List<Person>> cliques = graph.getMaximalCliques(3);
         
         Path path = Paths.get(DOWNLOADS_DIR, filename);
         path = Files.createFile(path);
@@ -64,7 +60,6 @@ public class Main {
     }
 
     public static boolean harvestAll() throws IOException {
-        
         // give the user some time to set up the facebook page correctly
         try {
             Thread.sleep(2000);
@@ -73,7 +68,7 @@ public class Main {
         }
         Harvester h;
         try {
-            h = new Harvester(250, 100, DOWNLOADS_DIR, OUTPUT_DIR);
+            h = new Harvester(450, 2000, DOWNLOADS_DIR, OUTPUT_DIR);
         } catch (AWTException e) {
             e.printStackTrace();
             System.out.println("Could not create Harvester");

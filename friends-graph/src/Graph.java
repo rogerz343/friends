@@ -1,9 +1,12 @@
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A representation of an undirected graph with nodes of type V
@@ -81,18 +84,99 @@ public class Graph<V> {
     }
     
     /**
-     * Finds all maximal cliques in the graph
-     * @return A list of maximal cliques in the graph, where each clique is represented
-     * as a list of `Person`s.
+     * Returns a list of nodes that are exactly distance 2 away from
+     * u. The list is sorted in descending order of the number of length-2
+     * paths to u. In the context of a social network, this would return
+     * a list of people who you are not friends with but have mutual friends with.
+     * @param u The node in consideration
+     * @param minMutualFriends The minimum number of mutual friends of u and a node
+     * v in order for v to be added to the returned List.
+     * @return A list of nodes sorted in descending order by the number of
+     * length-2 paths from those nodes to u (e.g. number of mutual
+     * friends they have with u).
+     */
+    public List<V> getSuggestedFriends(V u, int minMutualFriends) {
+        List<V> candidates = getDistanceDNodes(u, 2);
+        List<NodeIntPair> candidatesFiltered = new ArrayList<>();
+        for (V v : candidates) {
+            List<V> mutualFriends = getMutualFriends(u, v);
+            if (mutualFriends.size() >= minMutualFriends) {
+                candidatesFiltered.add(new NodeIntPair(v, mutualFriends.size()));
+            }
+        }
+        candidatesFiltered.sort((p1, p2) -> p2.val - p1.val);
+        return candidatesFiltered.stream()
+                .map(p -> p.node)
+                .collect(Collectors.toCollection(ArrayList<V>::new));
+    }
+    
+    /**
+     * Returns a list of nodes that are neighbors with both u and v.
+     * @param u A node in the graph.
+     * @param w A node in the graph.
+     * @return
+     */
+    public List<V> getMutualFriends(V u, V w) {
+        Set<V> uNeighbors = new HashSet<>();
+        for (V uNeighbor : adjList.get(u)) {
+            uNeighbors.add(uNeighbor);
+        }
+        List<V> result = new ArrayList<>();
+        for (V wNeighbor : adjList.get(w)) {
+            if (uNeighbors.contains(wNeighbor)) {
+                result.add(wNeighbor);
+            }
+        }
+        return result;
+    }
+    
+    /**
+     * Returns a list of all of the nodes that are exactly distance d away from source.
+     * @param source A node in the graph.
+     * @return A list of all of the nodes that are exactly distance d away from the source.
+     */
+    public List<V> getDistanceDNodes(V source, int d) {
+        Set<V> discovered = new HashSet<>();
+        Deque<V> queue = new ArrayDeque<>();
+        discovered.add(source);
+        queue.add(source);
+        int size = queue.size();
+        int currDist = 0;
+        while (!queue.isEmpty() && currDist < d) {
+            for (int i = 0; i < size; i++) {
+                V v = queue.remove();
+                for (V w : adjList.get(v)) {
+                    if (!discovered.contains(w)) {
+                        queue.add(w);
+                    }
+                }
+            }
+            currDist++;
+        }
+        if (currDist == d) {
+            return new ArrayList<>(queue);
+        }
+        return new ArrayList<>();
+    }
+    
+    /**
+     * Finds all maximal cliques in the graph whose size is at least minSize and returns
+     * them in descending order of their size.
+     * @param minSize the minimum size of a maximal clique that is returned.
+     * @return A list of maximal cliques in the graph sorted in descending order by their
+     * size, where each clique is represented as a list of `Person`s.
      * This method uses the Bron-Kerbosch algorithm with vertex ordering and pivoting.
      */
-    public List<List<V>> findCliques() {
+    public List<List<V>> getMaximalCliques(int minSize) {
         maximalCliques = new ArrayList<>();
         BronKerboschVertexOrdering();
         List<List<V>> ans = new ArrayList<>();
         for (List<V> clique : maximalCliques) {
-            ans.add(new ArrayList<>(clique));
+            if (clique.size() >= minSize) {
+                ans.add(new ArrayList<>(clique));
+            }
         }
+        ans.sort((l1, l2) -> l2.size() - l1.size());
         return ans;
     }
     

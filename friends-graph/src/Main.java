@@ -79,6 +79,6 @@ public class Main {
             System.out.println("Could not create Harvester");
             return false;
         }
-        return h.harvestAllPages();
+        return h.beginNewHarvest();
     }
 }

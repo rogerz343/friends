@@ -29,7 +29,7 @@ public class FriendsFiles {
         String logMessage = "[" + LocalDateTime.now() + "] " + message + "\n";
         try {
             Files.write(Paths.get(logFilePath), logMessage.getBytes(),
-                    StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException e) {
             System.err.println("err: writeLog() failed.");
             e.printStackTrace();

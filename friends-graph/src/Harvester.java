@@ -40,6 +40,7 @@ public class Harvester {
     private Deque<Person> downloadQueue;
     
     private InterruptibleRobot robot;
+    private final String logFilePath;
     
     private static String LOG_FILE = "harvester.log";
     private static String HARVESTER_STATE_FILE = "harvester.state";
@@ -76,9 +77,9 @@ public class Harvester {
         this.downloadsDir = downloadsDir;
         this.outputDir = outputDir;
         
-        Path logFilePath = Paths.get(outputDir, LOG_FILE);
-        Files.deleteIfExists(logFilePath);
-        Files.createFile(logFilePath);
+        logFilePath = Paths.get(outputDir, LOG_FILE).toString();
+        Files.deleteIfExists(Paths.get(logFilePath));
+        Files.createFile(Paths.get(logFilePath));
         
         numDownloaded = 0;
         finishedPeople = new HashSet<>();
@@ -90,7 +91,7 @@ public class Harvester {
         robot.setAutoDelay(200);
         
         isNewHarvester = true;
-        FriendsFiles.writeLog(LOG_FILE, "Initialized new Harvester.");
+        FriendsFiles.writeLog(logFilePath, "Initialized new Harvester.");
     }
     
     /**
@@ -107,6 +108,8 @@ public class Harvester {
         this.maxPerPerson = Integer.parseInt(lines.get(1));
         this.downloadsDir = lines.get(2);
         this.outputDir = lines.get(3);
+        logFilePath = Paths.get(outputDir, LOG_FILE).toString();
+        
         this.numDownloaded = Integer.parseInt(lines.get(4));
         
         int startLine;
@@ -137,7 +140,7 @@ public class Harvester {
         }
         
         isNewHarvester = false;
-        FriendsFiles.writeLog(LOG_FILE, "Loaded Harvester from \"" + dir + "\".");
+        FriendsFiles.writeLog(logFilePath, "Loaded Harvester from \"" + dir + "\".");
     }
     
     /**
@@ -148,12 +151,12 @@ public class Harvester {
      */
     public boolean beginNewHarvest() {
         if (!isNewHarvester) {
-            FriendsFiles.writeLog(LOG_FILE,
+            FriendsFiles.writeLog(logFilePath,
                     "beginNewHarvest(): err: attempted to call on a non-new Harvester");
             return false;
         }
         
-        FriendsFiles.writeLog(LOG_FILE, "beginNewHarvest(): starting.");
+        FriendsFiles.writeLog(logFilePath, "beginNewHarvest(): starting.");
         
         // first, download the information from the source (usually your own fb page)
         String rootUserHtmlName = harvestSingleFriendsPage();
@@ -185,12 +188,11 @@ public class Harvester {
             if (!finishedPeople.contains(p)) { downloadQueue.add(p); }
         }
         
-        FriendsFiles.writeLog(LOG_FILE, "beginNewHarvest(): retrieved root Person info. done.");
+        FriendsFiles.writeLog(logFilePath, "beginNewHarvest(): retrieved root Person info. done.");
         
         return harvestAllPages();
     }
     
-    // TODO: add error checking
     /**
      * Performs a breadth-first search of your friends network, with the parameters specified
      * by the instance variables. A facebook profile page should be open on the screen when
@@ -202,18 +204,18 @@ public class Harvester {
      * @return true if no error occurred, false otherwise.
      */
     public boolean harvestAllPages() {
-        FriendsFiles.writeLog(LOG_FILE, "harvestAllPages(): starting.");
+        FriendsFiles.writeLog(logFilePath, "harvestAllPages(): starting.");
         while (numDownloaded < maxNumPeople && !downloadQueue.isEmpty()) {
             Person user = downloadQueue.peek();
             
             // used for human-readable log file messages
             String userSummary = "[" + user.getName() + " (" + user.getBaseUrl() + ")]";
             
-            FriendsFiles.writeLog(LOG_FILE, "harvestAllPages(): retrieving info for "
+            FriendsFiles.writeLog(logFilePath, "harvestAllPages(): retrieving info for "
                     + userSummary + ".");
             
             if (finishedPeople.contains(user)) {
-                FriendsFiles.writeLog(LOG_FILE, "harvestAllPages(): already previously "
+                FriendsFiles.writeLog(logFilePath, "harvestAllPages(): already previously "
                         + "retrieved info for " + userSummary + ". Skipping.");
                 downloadQueue.remove();
                 continue;
@@ -224,7 +226,7 @@ public class Harvester {
             // retrieve the html file when it is ready
             Path userHtmlPath = Paths.get(downloadsDir, userHtmlName).toAbsolutePath();
             if (!waitForDownload(userHtmlPath, timeout)) {
-                FriendsFiles.writeLog(LOG_FILE, "harvestAllPages(): waitForDownload() "
+                FriendsFiles.writeLog(logFilePath, "harvestAllPages(): waitForDownload() "
                         + "timed out for user " + userSummary + ". Skipping.");
                 skippedPeople.add(user);
                 downloadQueue.remove();
@@ -239,7 +241,7 @@ public class Harvester {
                 // could not open this user's profile: just skip this person
                 // without adding to finishedPeople
                 e.printStackTrace();
-                FriendsFiles.writeLog(LOG_FILE, "harvestAllPages(): could not open .html file "
+                FriendsFiles.writeLog(logFilePath, "harvestAllPages(): could not open .html file "
                         + "for user " + userSummary + ". Skipping.");
                 skippedPeople.add(user);
                 downloadQueue.remove();
@@ -250,7 +252,7 @@ public class Harvester {
                     .toString();
             try {
                 if (!FriendsFiles.saveToFile(userFriends, outputFile)) {
-                    FriendsFiles.writeLog(LOG_FILE,
+                    FriendsFiles.writeLog(logFilePath,
                             "harvestAllPages(): " + outputFile
                             + " already exists. Now using existing file.");
                     userFriends = FriendsFiles.loadFromFile(outputFile);
@@ -259,7 +261,7 @@ public class Harvester {
                 // could not open this user's profile: just skip this person
                 // without adding to finishedPeople
                 e.printStackTrace();
-                FriendsFiles.writeLog(LOG_FILE, "harvestAllPages(): could not load "
+                FriendsFiles.writeLog(logFilePath, "harvestAllPages(): could not load "
                         + ".friends file for user " + userSummary + ". Skipping.");
                 skippedPeople.add(user);
                 downloadQueue.remove();
@@ -280,7 +282,7 @@ public class Harvester {
             // if robot was interrupted, don't go on to remove the current user from
             // the queue and don't save the state.
             if (robot.interrupted) {
-                FriendsFiles.writeLog(LOG_FILE, "harvestAllPages(): robot interrupted. "
+                FriendsFiles.writeLog(logFilePath, "harvestAllPages(): robot interrupted. "
                         + "Exiting method.");
                 return false;
             }
@@ -293,12 +295,12 @@ public class Harvester {
             // state state every now and then
             if (numDownloaded % 5 == 0) {
                 try {
-                    FriendsFiles.writeLog(LOG_FILE, "harvestAllPages(): saving Harvester state.");
+                    FriendsFiles.writeLog(logFilePath, "harvestAllPages(): saving Harvester state.");
                     saveHarvester();
                 } catch (IOException e) {
                     // could not save Harvester state for some reason, just continue
                     // and hopefully it'll save correctly during the next loop
-                    FriendsFiles.writeLog(LOG_FILE, "harvestAllPages(): IOException thrown "
+                    FriendsFiles.writeLog(logFilePath, "harvestAllPages(): IOException thrown "
                             + "by saveHarvester(). Moving on without saving.");
                     e.printStackTrace();
                 }

@@ -1,9 +1,17 @@
 import java.awt.AWTException;
 import java.awt.Robot;
+import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * friends
@@ -12,33 +20,61 @@ import java.util.List;
  * readme.txt for more details.
  */
 public class Main {
+    
+    static String DOWNLOADS_DIR = "D:\\Robin Zhang\\Downloads\\";
+    static String OUTPUT_DIR = "D:\\Robin Zhang\\Desktop\\savev2\\";
+    
     // TODO: add a GUI
-    public static void main(String[] args) throws AWTException {
+    public static void main(String[] args) throws AWTException, IOException {
         long startTime = System.nanoTime();
         System.out.println("Program started at: " + LocalDateTime.now());
         
-        String DOWNLOADS_DIR = "D:\\Robin Zhang\\Downloads\\";
-        String OUTPUT_DIR = "D:\\Robin Zhang\\Desktop\\savev2\\";
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        Harvester h = new Harvester();
-        h.harvestAllPages(500, 100, DOWNLOADS_DIR, OUTPUT_DIR);
+        Graph<Person> graph = loadIntoGraph(OUTPUT_DIR);
+        System.out.println("Number of nodes: " + graph.getNumNodes());
+        System.out.println("Number of edges: " + graph.getNumEdges());
+        List<List<Person>> cliques = graph.findCliques();
+        cliques.sort((l1, l2) -> l1.size() - l2.size());
+        
+        Path path = Paths.get(DOWNLOADS_DIR, "cliques.txt");
+        path = Files.createFile(path);
+        
+        List<String> lines =
+                cliques.stream()
+                .map(c -> c.toString())
+                .collect(Collectors.toCollection(ArrayList<String>::new));
+        Files.write(path, lines);
         
         long endTime = System.nanoTime();
-        System.out.println("Program ran for " + ((endTime - startTime) / 100000000) + " seconds.");
+        System.out.println("Program ran for " + ((endTime - startTime) / 1000000000) + " seconds.");
+    }
+    
+    public static Graph<Person> loadIntoGraph(String dirpath) {
+        List<List<Person>> adjLists = FriendsFiles.loadAllInDirectory(OUTPUT_DIR, true);
+        Map<Person, List<Person>> adjList = new HashMap<>();
+        for (List<Person> l : adjLists) {
+            Person p = l.get(0);
+            l.remove(0);
+            adjList.put(p, l);
+        }
+        return new Graph<Person>(adjList);
     }
 
-    public static void harvest() throws AWTException {
+    public static void harvestAll() {
+        
         // give the user some time to set up the facebook page correctly
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        Harvester h = new Harvester();
-        h.harvestSingleFriendsPage();
+        Harvester h;
+        try {
+            h = new Harvester();
+        } catch (AWTException e) {
+            e.printStackTrace();
+            System.out.println("Could not create Harvester");
+            return;
+        }
+        h.harvestAllPages(500, 100, DOWNLOADS_DIR, OUTPUT_DIR);
     }
 }

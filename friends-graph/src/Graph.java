@@ -55,6 +55,18 @@ public class Graph<V> {
         }
     }
     
+    public int getNumNodes() {
+        return adjList.size();
+    }
+    
+    public int getNumEdges() {
+        int numEdges = 0;
+        for (List<V> l : adjList.values()) {
+            numEdges += l.size();
+        }
+        return numEdges;
+    }
+    
     /**
      * Finds all maximal cliques in the graph
      * @return A list of maximal cliques in the graph, where each clique is represented

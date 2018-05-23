@@ -19,6 +19,9 @@ The program (currently) only runs correctly on Windows 10. Note that there could
 - More detail about how classes are implemented can be found in the source code.
 - Many design choices made here may seem unoptimal, but were chosen given the restriction that facebook doesn't (to my knowledge as of now) allow access to other people's friends through an API and they also have some server-side prevention measures against automated information retrieval (ex: using a wget). Still, there are clearly better ways to implement some of this program's functionalities, but the current implementation is simple to understand (not dependent on any non-standard libraries) and "good enough".
 
+### Development/testing notes
+- running `findCliques()` on a graph with 250 nodes and 23000 edges took 190 seconds (approx 3 minutes)
+
 ## TODO, bugs, and other possible improvements
 - Revamp file I/O to only use java's files and paths libraries (`java.nio.\*`)
 - Fix some potentially confusing code relating to mixing up `Path` vs `String` as arguments

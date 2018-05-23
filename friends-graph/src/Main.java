@@ -29,7 +29,7 @@ public class Main {
         long startTime = System.nanoTime();
         System.out.println("Program started at: " + LocalDateTime.now());
         
-        System.out.println(harvestAll());
+        saveGraphInfo("cliques.txt");
         
         long endTime = System.nanoTime();
         System.out.println("Program ran for " + ((endTime - startTime) / 1000000000) + " seconds.");
@@ -53,7 +53,7 @@ public class Main {
     }
     
     public static Graph<Person> loadIntoGraph(String dirpath) {
-        List<List<Person>> adjLists = FriendsFiles.loadAllInDirectory(OUTPUT_DIR, true);
+        List<List<Person>> adjLists = FriendsFiles.loadAllInDirectory(OUTPUT_DIR, false);
         Map<Person, List<Person>> adjList = new HashMap<>();
         for (List<Person> l : adjLists) {
             Person p = l.get(0);

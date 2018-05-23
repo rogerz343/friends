@@ -126,21 +126,28 @@ public class Harvester {
         maxNumPeople = Math.min(maxNumPeople, 10000000);
         
         while (numDownloaded < maxNumPeople && !downloadQueue.isEmpty()) {
-            Person user = downloadQueue.remove();
+            Person user = downloadQueue.peek();
             if (finishedPeople.contains(user)) { continue; }
             
             String userHtmlName = harvestSingleFriendsPage(user);
             
             // retrieve the html file when it is ready
             Path userHtmlPath = Paths.get(downloadsDir, userHtmlName).toAbsolutePath();
-            if (!waitForDownload(userHtmlPath, timeout)) { return false; }
+            if (!waitForDownload(userHtmlPath, timeout)) {
+                // waiting for download timed out; we could continue,
+                // but downloads timing out usually means something major is wrong
+                // so just return
+                return false;
+            }
             
             List<Person> userFriends;
             try {
                 userFriends = FriendsHtmlParser.extractFriendsInfo(userHtmlPath.toString(), maxPerPerson, 300);
             } catch (FileNotFoundException e1) {
                 // could not open this user's profile: just skip this person
+                // without adding to finishedPeople
                 e1.printStackTrace();
+                downloadQueue.remove();
                 continue;
             }
             String outputFile = Paths.get(outputDir, user.getUniqueKey() + ".friends").toAbsolutePath().toString();
@@ -152,8 +159,11 @@ public class Harvester {
                     userFriends = FriendsFiles.loadFromFile(outputFile);
                 }
             } catch (IOException e) {
+                // could not open this user's profile: just skip this person
+                // without adding to finishedPeople
                 e.printStackTrace();
-                return false;
+                downloadQueue.remove();
+                continue;
             }
             
             finishedPeople.add(user);
@@ -167,6 +177,13 @@ public class Harvester {
             }
             numDownloaded++;
             
+            // if robot was interrupted, don't go on to remove the current user from
+            // the queue and don't save the state.
+            if (robot.interrupted) {
+                return false;
+            }
+            
+            // reaching here means everything went correctly, so save the state            
             HarvestState hsNew = new HarvestState(maxNumPeople, maxPerPerson,
                 downloadsDir, outputDir,
                 numDownloaded,

@@ -34,9 +34,6 @@ public class FriendsFiles {
             System.err.println("err: writeLog() failed.");
             e.printStackTrace();
         }
-        
-        // TODO: remove. for debugging only
-        // System.out.println(logMessage);
     }
     
     /**

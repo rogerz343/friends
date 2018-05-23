@@ -93,7 +93,7 @@ public class Harvester {
         
         robot = new InterruptibleRobot();
         robot.setAutoWaitForIdle(true);
-        robot.setAutoDelay(200);
+        robot.setAutoDelay(150);
         
         isNewHarvester = true;
         FriendsFiles.writeLog(logFilePath, "Initialized new Harvester.");
@@ -418,7 +418,7 @@ public class Harvester {
      * @return The name of the html file that was saved, or null if an error occurred.
      */
     public String harvestSingleFriendsPage() {
-        scrollToBottom();
+        scrollToBottom(100);
         return fetchHtml();
     }
     
@@ -429,8 +429,12 @@ public class Harvester {
      * @return The name of the html file that was saved, or null if an error occurred.
      */
     public String harvestSingleFriendsPage(Person person) {
+        // close any potential open chrome dialogue
+        robot.keyPress(KeyEvent.VK_ESCAPE);
+        robot.keyRelease(KeyEvent.VK_ESCAPE);
+        
         viewFriendsPage(person);
-        scrollToBottom();
+        scrollToBottom(100);
         return fetchHtml();
     }
     
@@ -464,13 +468,6 @@ public class Harvester {
         robot.keyRelease(KeyEvent.VK_V);
         robot.keyRelease(KeyEvent.VK_CONTROL);
         
-//        // not sure if we need this
-//        try {
-//            Thread.sleep(WAIT_TIME_AFTER_CTRL_V);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-        
         robot.keyPress(KeyEvent.VK_ENTER);
         robot.keyRelease(KeyEvent.VK_ENTER);
         
@@ -487,15 +484,19 @@ public class Harvester {
      * Scrolls the page to the bottom. May occasionally not make it all the way
      * to the bottom (ex: in a dynamically loading webpage that takes too long to load
      * new data)
-     * @return 0 if no error occurred. 1 otherwise.
+     * @param timeout The maximum number of seconds that this method is allowed to
+     * be active for before returning. As a (very approximate) reference, it takes about
+     * 100 seconds to scroll down a friends page that contains 1200 friends.
+     * @return true if no error (including timeout) occurred, false otherwise.
      */
-    private int scrollToBottom() {
-        robot.mouseMove(0, 0);
+    private boolean scrollToBottom(long timeout) {
+        // make sure window is in focus
+        robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        
         long startTime = System.nanoTime();
-        long timeout = 90;      // number of seconds before we consider this method as failing
-        boolean done = false;
-        while (!done) {
-            if ((System.nanoTime() - startTime) / 1000000000 >= timeout) { return 1; }
+        while ((System.nanoTime() - startTime) / 1000000000 >= timeout) {
             robot.keyPress(KeyEvent.VK_PAGE_DOWN);
             robot.keyRelease(KeyEvent.VK_PAGE_DOWN);
             robot.keyPress(KeyEvent.VK_PAGE_DOWN);
@@ -503,7 +504,7 @@ public class Harvester {
             robot.keyPress(KeyEvent.VK_PAGE_DOWN);
             robot.keyRelease(KeyEvent.VK_PAGE_DOWN);
             try {
-                Thread.sleep(700);
+                Thread.sleep(600);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -511,22 +512,28 @@ public class Harvester {
             if (almostEquals(sample, SCROLLBAR_BOTTOM, 10)) {
                 // double check
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 sample = robot.getPixelColor(SCROLLBAR_X, SCROLLBAR_Y);
                 if (almostEquals(sample, SCROLLBAR_BOTTOM, 10)) {
-                    done = true;
+                    // triple check
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    sample = robot.getPixelColor(SCROLLBAR_X, SCROLLBAR_Y);
+                    if (almostEquals(sample, SCROLLBAR_BOTTOM, 10)) {
+                        return true;
+                    }
                 }
             }
             // else, we are either not at the bottom or some other on-screen element
             // got in the way. in any case, just keep going
-            
-            // TODO: TEMP: JUST FOR PERSONAL TESTING; REMOVE THIS LATER
-            if ((System.nanoTime() - startTime) / 1000000000L >= 10) { return 0; }
         }
-        return 0;
+        return false;
     }
     
     /**

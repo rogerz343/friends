@@ -37,6 +37,10 @@ public class Harvester {
     private int numDownloaded;
     private Set<Person> finishedPeople;
     private Deque<Person> skippedPeople;    // skipped due to some error
+    
+    // inQueuePeople and downloadQueue have the same people, but we use
+    // both to get a Deque with O(1) membership testing
+    private Set<Person> inQueuePeople;
     private Deque<Person> downloadQueue;
     
     private InterruptibleRobot robot;
@@ -84,6 +88,7 @@ public class Harvester {
         numDownloaded = 0;
         finishedPeople = new HashSet<>();
         skippedPeople = new ArrayDeque<>();
+        inQueuePeople = new HashSet<>();
         downloadQueue = new ArrayDeque<>();
         
         robot = new InterruptibleRobot();
@@ -133,10 +138,13 @@ public class Harvester {
         
         int numInQueue = Integer.parseInt(lines.get(currLine));
         currLine++;
+        this.inQueuePeople = new HashSet<>();
         this.downloadQueue = new ArrayDeque<>();
         startLine = currLine;
         for (; currLine < startLine + numInQueue; currLine++) {
-            downloadQueue.add(Person.fromString(lines.get(currLine)));
+            Person p = Person.fromString(lines.get(currLine));
+            inQueuePeople.add(p);
+            downloadQueue.add(p);
         }
         
         isNewHarvester = false;
@@ -185,7 +193,10 @@ public class Harvester {
         
         finishedPeople.add(rootUser);
         for (Person p : rootUserFriends) {
-            if (!finishedPeople.contains(p)) { downloadQueue.add(p); }
+            if (!finishedPeople.contains(p) && !inQueuePeople.contains(p)) {
+                inQueuePeople.add(p);
+                downloadQueue.add(p);
+            }
         }
         
         FriendsFiles.writeLog(logFilePath, "beginNewHarvest(): retrieved root Person info. done.");
@@ -217,6 +228,7 @@ public class Harvester {
             if (finishedPeople.contains(user)) {
                 FriendsFiles.writeLog(logFilePath, "harvestAllPages(): already previously "
                         + "retrieved info for " + userSummary + ". Skipping.");
+                inQueuePeople.remove(user);
                 downloadQueue.remove();
                 continue;
             }
@@ -229,6 +241,7 @@ public class Harvester {
                 FriendsFiles.writeLog(logFilePath, "harvestAllPages(): waitForDownload() "
                         + "timed out for user " + userSummary + ". Skipping.");
                 skippedPeople.add(user);
+                inQueuePeople.remove(user);
                 downloadQueue.remove();
                 continue;
             }
@@ -244,6 +257,7 @@ public class Harvester {
                 FriendsFiles.writeLog(logFilePath, "harvestAllPages(): could not open .html file "
                         + "for user " + userSummary + ". Skipping.");
                 skippedPeople.add(user);
+                inQueuePeople.remove(user);
                 downloadQueue.remove();
                 continue;
             }
@@ -264,6 +278,7 @@ public class Harvester {
                 FriendsFiles.writeLog(logFilePath, "harvestAllPages(): could not load "
                         + ".friends file for user " + userSummary + ". Skipping.");
                 skippedPeople.add(user);
+                inQueuePeople.remove(user);
                 downloadQueue.remove();
                 continue;
             }
@@ -271,7 +286,10 @@ public class Harvester {
             finishedPeople.add(user);
             int numAdded = 0;
             for (Person p : userFriends) {
-                if (!finishedPeople.contains(p)) { downloadQueue.add(p); }
+                if (!finishedPeople.contains(p) && !inQueuePeople.contains(p)) {
+                    inQueuePeople.add(p);
+                    downloadQueue.add(p);
+                }
                 
                 // placed outside of previous if statement to ensure max degree maxPerPerson
                 numAdded++;
@@ -289,7 +307,8 @@ public class Harvester {
             
             // reaching here means everything went correctly
             
-            // remove the person from the queue
+            FriendsFiles.writeLog(logFilePath, "harvestAllPages(): successfully retrieved.");
+            inQueuePeople.remove(user);
             downloadQueue.remove();
             
             // state state every now and then

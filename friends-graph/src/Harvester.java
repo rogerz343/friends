@@ -49,8 +49,7 @@ public class Harvester {
     /**
      * Performs a breadth-first search of your friends network, starting at the person
      * whose profile page is open on chrome (and on screen) when this method is called.
-     * @param maxNumPeople The maximum number of people to download pages from. Cannot be
-     * larger than 10000000.
+     * @param maxNumPeople The maximum number of people to download pages from.
      * @param maxPerPerson The maximum number of friends extracted from each person's friends
      * page, ordered by however facebook orders friendship.
      * @param downloadsDir The filesystem path to the default chrome download directory
@@ -92,39 +91,38 @@ public class Harvester {
         for (Person p : rootUserFriends) {
             if (!finishedPeople.contains(p)) { downloadQueue.add(p); }
         }
-        return harvestAllPages(maxNumPeople, maxPerPerson,
+        
+        HarvestState hs = new HarvestState(maxNumPeople, maxPerPerson,
                 downloadsDir, outputDir,
                 1, finishedPeople, downloadQueue);
+        return harvestAllPages(hs);
     }
     
     // TODO: add error checking
     /**
-     * Performs a breadth-first search of your friends network, where the current BFS queue
-     * `downloadQueue` is given as a parameter. When this method is called, the a facebook
+     * Performs a breadth-first search of your friends network, with the given HarvestState
+     * (see documention in HarvestState for more details). When this method is called, a facebook
      * profile page should be open on the screen. For each Person in the BFS queue, this
      * method downloads that person's Friends page (.html file). Then, this method will save
-     * a file to `outputDir` corresponding to that Person and his/her friends. The process
+     * a file (corresponding to that Person and his/her friends) to `hs.outputDir`. The process
      * is repeated for all of this person's friends. After every Person is processed, the
-     * state of this method is saved as a file into outputDir so that it the data processing
+     * state of this method is saved as a file into `hs.outputDir` so that it the data processing
      * can be interrupted and resume later on.
-     * @param maxNumPeople The maximum number of people to download pages from. Cannot be
-     * larger than 10000000.
-     * @param maxPerPerson The maximum number of friends extracted from each person's friends
-     * page, ordered by however facebook orders friendship.
-     * @param downloadsDir The filesystem path to the default chrome download directory
-     * @param outputDir The filesystem path to a directory where the output files (lists
-     * of a user and his or her friends) will be saved.
-     * @param numDownloaded The number of pages already downloaded before calling this method.
-     * @param finishedPeople The set of `Person`s whose Friends pages have already been downloaded.
-     * @param downloadQueue The BFS queue of Persons to consider.
+     * @param hs The HarvestState previously saved.
      * @return true if no error occurred, false otherwise.
      * 
      */
-    public boolean harvestAllPages(int maxNumPeople, int maxPerPerson,
-            String downloadsDir, String outputDir,
-            int numDownloaded,
-            Set<Person> finishedPeople, Deque<Person> downloadQueue) {
+    public boolean harvestAllPages(HarvestState hs) {
         int timeout = 180;
+        
+        int maxNumPeople = hs.maxNumPeople;
+        int maxPerPerson = hs.maxPerPerson;
+        String downloadsDir = hs.downloadsDir;
+        String outputDir = hs.outputDir;
+        int numDownloaded = hs.numDownloaded;
+        Set<Person> finishedPeople = hs.finishedPeople;
+        Deque<Person> downloadQueue = hs.downloadQueue;
+        
         maxNumPeople = Math.min(maxNumPeople, 10000000);
         
         while (numDownloaded < maxNumPeople && !downloadQueue.isEmpty()) {
@@ -168,6 +166,18 @@ public class Harvester {
                 if (numAdded >= maxPerPerson) { break; }
             }
             numDownloaded++;
+            
+            HarvestState hsNew = new HarvestState(maxNumPeople, maxPerPerson,
+                downloadsDir, outputDir,
+                numDownloaded,
+                finishedPeople, downloadQueue);
+            try {
+                saveHarvestState(hsNew);
+            } catch (IOException e) {
+                // could not save HarvestState for some reason, just continue
+                // and hopefully it'll save correctly during the next loop
+                e.printStackTrace();
+            }
             
             // TODO: delete the .js, .css, etc. source folders associated with the html document
         }
@@ -242,12 +252,21 @@ public class Harvester {
      *
      */
     private class HarvestState {
+        // the max number of people to download pages from
         public int maxNumPeople;
+        // the max number of friends extracted from each person's friends page, ordered by
+        // however facebook orders friendship
         public int maxPerPerson;
+        // the filesystem path to the default chrome download directory
         public String downloadsDir;
+        // the filesystem path to a directory where the output files (lists of a user and
+        // his or her friends) will be saved
         public String outputDir;
+        // the number of pages already downloaded
         public int numDownloaded;
+        // the set of `Person`s whose Friends pages have already been downloaded
         public Set<Person> finishedPeople;
+        // the BFS queue of `Person`s to download/process info from
         public Deque<Person> downloadQueue;
         
         public HarvestState(int maxNumPeople, int maxPerPerson,

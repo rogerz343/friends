@@ -22,20 +22,27 @@ import java.util.stream.Collectors;
 public class Main {
     
     static String DOWNLOADS_DIR = "D:\\Robin Zhang\\Downloads\\";
-    static String OUTPUT_DIR = "D:\\Robin Zhang\\Desktop\\savev2\\";
+    static String OUTPUT_DIR = "D:\\Robin Zhang\\Desktop\\savev1\\";
     
     // TODO: add a GUI
     public static void main(String[] args) throws AWTException, IOException {
         long startTime = System.nanoTime();
         System.out.println("Program started at: " + LocalDateTime.now());
         
+        
+        
+        long endTime = System.nanoTime();
+        System.out.println("Program ran for " + ((endTime - startTime) / 1000000000) + " seconds.");
+    }
+    
+    public static void saveGraphInfo(String filename) throws IOException {
         Graph<Person> graph = loadIntoGraph(OUTPUT_DIR);
         System.out.println("Number of nodes: " + graph.getNumNodes());
         System.out.println("Number of edges: " + graph.getNumEdges());
         List<List<Person>> cliques = graph.findCliques();
         cliques.sort((l1, l2) -> l1.size() - l2.size());
         
-        Path path = Paths.get(DOWNLOADS_DIR, "cliques.txt");
+        Path path = Paths.get(DOWNLOADS_DIR, filename);
         path = Files.createFile(path);
         
         List<String> lines =
@@ -43,9 +50,6 @@ public class Main {
                 .map(c -> c.toString())
                 .collect(Collectors.toCollection(ArrayList<String>::new));
         Files.write(path, lines);
-        
-        long endTime = System.nanoTime();
-        System.out.println("Program ran for " + ((endTime - startTime) / 1000000000) + " seconds.");
     }
     
     public static Graph<Person> loadIntoGraph(String dirpath) {
@@ -75,6 +79,6 @@ public class Main {
             System.out.println("Could not create Harvester");
             return;
         }
-        h.harvestAllPages(500, 100, DOWNLOADS_DIR, OUTPUT_DIR);
+        h.harvestAllPages(250, 100, DOWNLOADS_DIR, OUTPUT_DIR);
     }
 }

@@ -29,7 +29,7 @@ public class Main {
         long startTime = System.nanoTime();
         System.out.println("Program started at: " + LocalDateTime.now());
         
-        harvestAll();
+        System.out.println(harvestAll());
         
         long endTime = System.nanoTime();
         System.out.println("Program ran for " + ((endTime - startTime) / 1000000000) + " seconds.");
@@ -63,7 +63,7 @@ public class Main {
         return new Graph<Person>(adjList);
     }
 
-    public static void harvestAll() {
+    public static boolean harvestAll() {
         
         // give the user some time to set up the facebook page correctly
         try {
@@ -77,8 +77,8 @@ public class Main {
         } catch (AWTException e) {
             e.printStackTrace();
             System.out.println("Could not create Harvester");
-            return;
+            return false;
         }
-        h.harvestAllPages(250, 100, DOWNLOADS_DIR, OUTPUT_DIR);
+        return h.harvestAllPages(250, 100, DOWNLOADS_DIR, OUTPUT_DIR);
     }
 }

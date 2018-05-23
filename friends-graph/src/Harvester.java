@@ -127,7 +127,10 @@ public class Harvester {
         
         while (numDownloaded < maxNumPeople && !downloadQueue.isEmpty()) {
             Person user = downloadQueue.peek();
-            if (finishedPeople.contains(user)) { continue; }
+            if (finishedPeople.contains(user)) {
+                downloadQueue.remove();
+                continue;
+            }
             
             String userHtmlName = harvestSingleFriendsPage(user);
             
@@ -183,17 +186,24 @@ public class Harvester {
                 return false;
             }
             
-            // reaching here means everything went correctly, so save the state            
-            HarvestState hsNew = new HarvestState(maxNumPeople, maxPerPerson,
-                downloadsDir, outputDir,
-                numDownloaded,
-                finishedPeople, downloadQueue);
-            try {
-                saveHarvestState(hsNew);
-            } catch (IOException e) {
-                // could not save HarvestState for some reason, just continue
-                // and hopefully it'll save correctly during the next loop
-                e.printStackTrace();
+            // reaching here means everything went correctly
+            
+            // remove the person from the queue
+            downloadQueue.remove();
+            
+            // state state every now and then
+            if (numDownloaded % 5 == 0) {
+                HarvestState hsNew = new HarvestState(maxNumPeople, maxPerPerson,
+                    downloadsDir, outputDir,
+                    numDownloaded,
+                    finishedPeople, downloadQueue);
+                try {
+                    saveHarvestState(hsNew);
+                } catch (IOException e) {
+                    // could not save HarvestState for some reason, just continue
+                    // and hopefully it'll save correctly during the next loop
+                    e.printStackTrace();
+                }
             }
             
             // TODO: delete the .js, .css, etc. source folders associated with the html document
@@ -317,6 +327,11 @@ public class Harvester {
             try {
                 Thread.sleep(1000);
                 secondsWaited++;
+                
+                // TODO: remove this; used for debugging
+                if (secondsWaited > 12) {
+                    System.out.println("Waited " + secondsWaited + " seconds for download.");
+                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -447,7 +462,7 @@ public class Harvester {
             // got in the way. in any case, just keep going
             
             // TODO: TEMP: JUST FOR PERSONAL TESTING; REMOVE THIS LATER
-            if ((System.nanoTime() - startTime) / 1000000000 >= 10) { return 0; }
+            if ((System.nanoTime() - startTime) / 1000000000L >= 10) { return 0; }
         }
         return 0;
     }

@@ -85,6 +85,15 @@ public class FriendsHtmlParser {
                 throw new FileNotFoundException("Could not open file to read after "
                         + maxReadAttempts + " attempts (1 attempt per second)");
             }
+            
+            // TODO: remove this; for debugging only
+            // TODO: we are getting stuck in this loop; it seems that sometimes,
+            // the robot doesn't actually download the file; in the last test run,
+            // this robot failed to download the html of jacquelines page
+            // TODO: investigation to be continued tomorrow...
+            if (numReadAttempts > 12) {
+                System.out.println("extractFriendsInfo(): waited " + numReadAttempts + " seconds to open file: " + filepath);
+            }
         }
         
         List<Person> result = new ArrayList<>();
@@ -116,10 +125,19 @@ public class FriendsHtmlParser {
         if (ownerName == null) { return null; }
                 
         result.add(new Person(ownerName, ownerBaseUrl));
+        
+        // TODO: remove; for debugging only
+        int numLoops = 0;
                 
         // add the rest of the friends
         boolean success;
         while (!isEOF(br)) {
+            // TODO: for debugging; remove this
+            numLoops++;
+            if (numLoops > 200) {
+                System.out.println("extractFriendsInfo(): stuck in !EOF loop.");
+            }
+            
             // logic on error checking: if the tag isn't found, then either we hit the EOF
             // (which is fine) or something actually went wrong (not fine, so return null)
             success = findString(br, LI_TAG);
@@ -127,10 +145,14 @@ public class FriendsHtmlParser {
             success = findString(br, DIV_TAG1);
             if (!success && !isEOF(br)) { return null; }
             
-            // DIV_TAG2 will not appear if the profile block corresponds to the user who is
-            // logged in to facebook himself/herself. Thus, just skip this block.
             success = findString(br, DIV_TAG2);
-            if (!success && !isEOF(br)) { continue; }
+            if (!success && !isEOF(br)) {
+                // DIV_TAG2 will not appear if the profile block corresponds to the user who is
+                // logged in to facebook himself/herself. Thus, ...
+                // TODO: currently just assumes whoever is logged in myself (roger zhang)
+                result.add(new Person("Roger Zhang", "https://www.facebook.com/roger.zhang.5"));
+                continue;
+            }
             success = findString(br, PRECEDES_URL);
             if (!success && !isEOF(br)) { return null; }
             

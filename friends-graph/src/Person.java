@@ -6,11 +6,14 @@
  */
 public class Person {
     
-    // id should not contain any special characters (e.g. characters reserved for Windows filesystem)
+    // id should not contain any special characters (e.g. those reserved for Windows filesystem)
     private final String id;
-    private final int urlIdType;
     private final String name;
-    private final String baseUrl;    // the url to the Person's main profile page, with no trailing slashes or symbols
+
+    // the url to the Person's main profile page, with no trailing slashes, symbols, parameters
+    private final String baseUrl;
+    
+    private final int urlIdType;
     
     // has the form "https://www.facebook.com/john.smith.35", where "john.smith.35" is the id
     private static int CUSTOM_URL_TYPE = 0;

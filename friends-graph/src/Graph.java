@@ -40,6 +40,8 @@ public class Graph<V> {
             }
             if (!adjList.containsKey(e[0])) { adjList.put(e[0], new ArrayList<>()); }
             if (!adjList.containsKey(e[1])) { adjList.put(e[1], new ArrayList<>()); }
+
+            if (e[0].equals(e[1])) { continue; }
             if (!adjList.get(e[0]).contains(e[1])) { adjList.get(e[0]).add(e[1]); }
             if (!adjList.get(e[1]).contains(e[0])) { adjList.get(e[1]).add(e[0]); }
         }
@@ -56,6 +58,7 @@ public class Graph<V> {
             adjList.put(v, new ArrayList<>());
             List<V> vNeighbors = inputAdjList.get(v);
             for (V vNeighbor : vNeighbors) {
+                if (v.equals(vNeighbor)) { continue; }
                 if (!adjList.containsKey(vNeighbor)) {
                     adjList.put(vNeighbor, new ArrayList<>());
                 }

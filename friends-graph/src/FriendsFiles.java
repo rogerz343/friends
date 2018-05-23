@@ -74,8 +74,8 @@ public class FriendsFiles {
      * the "owner" and the following Person's representing the owner's friends. This method
      * does nothing if the file already exists and throws an exception if any other error
      * occurs.
-     * @param people The list of people to save. The first Person in the list represents the "owner", and the
-     * rest of the Person's are the "owner"'s friends.
+     * @param people The list of people to save. The first Person in the list represents the
+     * "owner", and the rest of the Person's are the "owner"'s friends.
      * @param filepath The path to the file to save to.
      * @return false if the file already exists; true otherwise.
      * @throws IllegalArgumentException if `people` is empty.

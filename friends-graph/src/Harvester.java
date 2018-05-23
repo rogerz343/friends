@@ -175,13 +175,16 @@ public class Harvester {
         
         List<Person> rootUserFriends;
         try {
-            rootUserFriends = FriendsHtmlParser.extractFriendsInfo(rootUserHtmlPath.toString(), maxPerPerson, 30);
+            rootUserFriends = FriendsHtmlParser.extractFriendsInfo(rootUserHtmlPath.toString(),
+                    maxPerPerson, 30);
         } catch (FileNotFoundException e2) {
             e2.printStackTrace();
             return false;
         }
         Person rootUser = rootUserFriends.get(0);
-        String outputFile = Paths.get(outputDir, rootUser.getUniqueKey() + ".friends").toAbsolutePath().toString();
+        String outputFile = Paths.get(outputDir, rootUser.getUniqueKey() + ".friends")
+                .toAbsolutePath()
+                .toString();
         try {
             FriendsFiles.saveToFile(rootUserFriends, outputFile);
         } catch (IOException e) {
@@ -314,7 +317,8 @@ public class Harvester {
             // state state every now and then
             if (numDownloaded % 5 == 0) {
                 try {
-                    FriendsFiles.writeLog(logFilePath, "harvestAllPages(): saving Harvester state.");
+                    FriendsFiles.writeLog(logFilePath,
+                            "harvestAllPages(): saving Harvester state.");
                     saveHarvester();
                 } catch (IOException e) {
                     // could not save Harvester state for some reason, just continue
@@ -542,11 +546,10 @@ public class Harvester {
     
     /**
      * Saves the dynamically generated html file from the current web page as an html file
-     * in the current working directory. Assumes that chrome is in focus and is on the correct webpage.
-     * Assumes that chrome's save "Webpage, complete" saves the dynamically generated html (not the source code).
+     * in the current working directory. Assumes that chrome is in focus and is on the correct
+     * webpage. Also assumes that chrome's save "Webpage, complete" saves the dynamically generated
+     * html (not the source code).
      * @return The filename of the html file that was downloaded, or null if an error occurred.
-     * TODO: temp: there is currently a bug in which the wrong String is returned, perhaps due to
-     * the retrieving the incorrect string from the clipboard when assigning htmlFilename
      */
     private String fetchHtml() {
         robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);

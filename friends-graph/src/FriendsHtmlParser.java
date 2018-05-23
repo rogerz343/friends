@@ -14,34 +14,40 @@ import java.util.List;
  * profiles: one specified by a custom url (such as "https://www.facebook.com/john.smith.75")
  * and one specified by a profile id (such as "https://www.facebook.com/profile.php?id=7777777").
  * These two cases are considered in many of the methods below.
+ * Note: in this code, "current user" and "owner" refer to the user whose Friends
+ * page .html file we are considering
  */
 public class FriendsHtmlParser {
     
-    // tags that help to locate the source url of the html file
-    // the following String and char immediately precede and succeed (respectively) the html source url
+    // the following String and char immediately precede and succeed (respectively) the
+    // url of the source of the html file
     private static String PRECEDES_SOURCE_URL = ")";
     private static char SUCCEEDS_SOURCE_URL = ' ';
     
-    // tags that help to locate the current user's (owner of html file) name
-    // the following tag indicates that we are coming up towards the user's name
+    // the following tag indicates that we are about to read the current user's name
     private static String SPAN_A_TAG =
-            "<span class=\"_2t_q\" id=\"fb-timeline-cover-name\" data-testid=\"profile_name_in_profile_page\">"
+            "<span class=\"_2t_q\" id=\"fb-timeline-cover-name\" "
+            + "data-testid=\"profile_name_in_profile_page\">"
             + "<a class=\"_2nlw _2nlv\" href=\"";
-    // the following String and char immediately precede and succeed (respectively) the name of the current user
+    // the following String and char immediately precede and succeed (respectively) the
+    // name of the current user
     private static String PRECEDES_OWNER_NAME = "\">";
     private static char SUCCEEDS_OWNER_NAME = '<';
     
-    // tags that indicate that we are about to read a friend's information
-    // IMPORTANT: DIV_TAG2 will not appear if the profile block corresponds to yourself (whoever is logged in)
+    // the following tags indicate that we are about to read a "friend information block"
+    // IMPORTANT: DIV_TAG2 will not appear if the profile block corresponds to whoever is logged in
     private static String LI_TAG = "<li class=\"_698\">";
-    private static String DIV_TAG1 = "<div class=\"clearfix _5qo4\" data-testid=\"friend_list_item\">";
+    private static String DIV_TAG1 =
+            "<div class=\"clearfix _5qo4\" data-testid=\"friend_list_item\">";
     private static String DIV_TAG2 = "<div class=\"uiProfileBlockContent\">";
     
-    // the following String and char immediately precede and succeed (respectively) the URL of the friend's profile
+    // the following String and char immediately precede and succeed (respectively) the
+    // URL of the friend's profile
     private static String PRECEDES_URL = "<a href=\"";
     private static char SUCCEEDS_URL = '\"';
     
-    // the following String and char immediately precede and succeed (respectively) the name of the friend
+    // the following String and char immediately precede and succeed (respectively) the
+    // name of the friend
     private static String PRECEDES_NAME = ">";
     private static char SUCCEEDS_NAME = '<';
     
@@ -50,20 +56,22 @@ public class FriendsHtmlParser {
      * person's friends, where the first element in the list is the input person him/herself.
      * This method will try to open the file every second for maxReadAttempts seconds before
      * throwing a FileNotFoundException.
-     * @param filepath The path to the person's facebook friends html file.
-     * @param maxToExtract The maximum number of friends to extract. Facebook seems
-     * to already sort friends by some notion of interaction, so the most "important"
-     * friends will be extracted first.
-     * @return The maximum number of attempts that this method will make to open the file
-     * (at one attempt per second).
-     * @return A list of the input profile's friends (up to `maxToExtract`). Returns null if an error occurred.
+     * <p>
      * Assumes that html document and people's names are well-formed (i.e. names don't
      * contain strange characters such as "<", ">", "\"", and the general form of the
      * document is: ... owner id ... owner name ... friend block ... friend block ... ... ... EOF
+     * @param filepath The path to the person's facebook friends html file.
+     * @param maxToExtract The maximum number of friends to extract. Friends whose information
+     * is extracted in the order of whatever order facebook uses to display friends on a page.
+     * @param maxReadAttempts The maximum number of attempts that this method will make to open the
+     * file (at one attempt per second) before throwing an error.
+     * @return A list of the input profile's friends (up to `maxToExtract`). Returns null if
+     * an error occurred.
      * @throws FileNotFoundException If filepath could not be opened
      * 
      */
-    public static List<Person> extractFriendsInfo(String filepath, int maxToExtract, int maxReadAttempts)
+    public static List<Person> extractFriendsInfo(String filepath,
+            int maxToExtract, int maxReadAttempts)
             throws FileNotFoundException {
         File file = new File(filepath);
         
@@ -217,7 +225,8 @@ public class FriendsHtmlParser {
     /**
      * Checks whether the given Reader has reached EOF without advancing file pointer
      * @param r The Reader
-     * @return true if the reader has reached EOF, false otherwise (including when an error occurred)
+     * @return true if the reader has reached EOF, false otherwise (including when an
+     * error occurred)
      */
     private static boolean isEOF(Reader r) {
         try {

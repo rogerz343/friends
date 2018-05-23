@@ -5,16 +5,39 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Used for file I/O relating to "Friends" files.
+ * Used for file I/O for files related to this program.
  * @author roger
  *
  */
 public class FriendsFiles {
+    
+    /**
+     * Writes the specified message to the specified file with a timestamp. Exceptions
+     * thrown by Files.write are ignored.
+     * @param logFilePath The path to the file to write to.
+     * @param message The message to append to the file.
+     * @throws IOException
+     */
+    public static void writeLog(String logFilePath, String message) {
+        String logMessage = "[" + LocalDateTime.now() + "] " + message + "\n";
+        try {
+            Files.write(Paths.get(logFilePath), logMessage.getBytes(),
+                    StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            System.err.println("err: writeLog() failed.");
+            e.printStackTrace();
+        }
+        
+        // TODO: remove. for debugging only
+        // System.out.println(logMessage);
+    }
     
     /**
      * Loads all Friends files in a directory (not recursively). If an error occurs in reading

@@ -89,7 +89,8 @@ public class FriendsHtmlParser {
             // TODO: remove this; for debugging only
             // TODO: we are getting stuck in this loop; it seems that sometimes,
             // the robot doesn't actually download the file; in the last test run,
-            // this robot failed to download the html of jacquelines page
+            // this robot failed to download the html of jacquelines page, but
+            // then how did we get past Harvester#waitForDownload()???
             // TODO: investigation to be continued tomorrow...
             if (numReadAttempts > 12) {
                 System.out.println("extractFriendsInfo(): waited " + numReadAttempts + " seconds to open file: " + filepath);

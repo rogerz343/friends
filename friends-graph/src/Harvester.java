@@ -321,8 +321,7 @@ public class Harvester {
         int secondsWaited = 0;  // not the most accurate, but good enough
         
         // probably don't need Files.isReadable() condition, but hey why not
-        while (!Files.exists(filepath)
-                && Files.isReadable(filepath)
+        while ((!Files.exists(filepath) || !Files.isReadable(filepath))
                 && secondsWaited < timeout) {
             try {
                 Thread.sleep(1000);

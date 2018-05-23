@@ -63,7 +63,7 @@ public class Main {
         return new Graph<Person>(adjList);
     }
 
-    public static boolean harvestAll() {
+    public static boolean harvestAll() throws IOException {
         
         // give the user some time to set up the facebook page correctly
         try {
@@ -73,12 +73,12 @@ public class Main {
         }
         Harvester h;
         try {
-            h = new Harvester();
+            h = new Harvester(250, 100, DOWNLOADS_DIR, OUTPUT_DIR);
         } catch (AWTException e) {
             e.printStackTrace();
             System.out.println("Could not create Harvester");
             return false;
         }
-        return h.harvestAllPages(250, 100, DOWNLOADS_DIR, OUTPUT_DIR);
+        return h.harvestAllPages();
     }
 }

@@ -1,7 +1,10 @@
 import java.awt.AWTException;
 import java.awt.Color;
+import java.awt.HeadlessException;
 import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.FileNotFoundException;
@@ -331,6 +334,13 @@ public class Harvester {
             
             // TODO: delete the .js, .css, etc. source folders associated with the html document
         }
+        if (downloadQueue.isEmpty()) {
+            FriendsFiles.writeLog(logFilePath, "harvestAllPages(): finished because "
+                    + "downloadQueue is empty.");
+        } else {
+            FriendsFiles.writeLog(logFilePath, "harvestAllPages(): finished because "
+                    + "maxNumPeople have been retrieved.");
+        }
         return true;
     }
     
@@ -386,19 +396,18 @@ public class Harvester {
      * @return true if the file is found, false otherwise.
      */
     private static boolean waitForDownload(Path filepath, int timeout) {
-        int secondsWaited = 0;  // not the most accurate, but good enough
+        long startTime = System.nanoTime();
         
         // probably don't need Files.isReadable() condition, but hey why not
-        while ((!Files.exists(filepath) || !Files.isReadable(filepath))
-                && secondsWaited < timeout) {
+        while ((System.nanoTime() - startTime) / 1000000000L < timeout &&
+                !Files.exists(filepath)) {
             try {
                 Thread.sleep(1000);
-                secondsWaited++;
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        if (secondsWaited >= timeout) { return false; }
+        if (!Files.exists(filepath)) { return false; }
         return true;
     }
     
@@ -430,8 +439,8 @@ public class Harvester {
      */
     public String harvestSingleFriendsPage(Person person) {
         // close any potential open chrome dialogue
-        robot.keyPress(KeyEvent.VK_ESCAPE);
-        robot.keyRelease(KeyEvent.VK_ESCAPE);
+//        robot.keyPress(KeyEvent.VK_ESCAPE);
+//        robot.keyRelease(KeyEvent.VK_ESCAPE);
         
         viewFriendsPage(person);
         scrollToBottom(100);
@@ -460,8 +469,7 @@ public class Harvester {
         
         // put next person's page into chrome address
         String urlFriendsPage = person.getFriendsPageUrl();
-        StringSelection ss = new StringSelection(urlFriendsPage);
-        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
+        blockingCopy(urlFriendsPage);
         
         robot.keyPress(KeyEvent.VK_CONTROL);
         robot.keyPress(KeyEvent.VK_V);
@@ -491,12 +499,13 @@ public class Harvester {
      */
     private boolean scrollToBottom(long timeout) {
         // make sure window is in focus
-        robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        // TODO: commented out for now b/c it registers as a double click
+//        robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
+//        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+//        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         
         long startTime = System.nanoTime();
-        while ((System.nanoTime() - startTime) / 1000000000 >= timeout) {
+        while ((System.nanoTime() - startTime) / 1000000000 < timeout) {
             robot.keyPress(KeyEvent.VK_PAGE_DOWN);
             robot.keyRelease(KeyEvent.VK_PAGE_DOWN);
             robot.keyPress(KeyEvent.VK_PAGE_DOWN);
@@ -586,8 +595,7 @@ public class Harvester {
         htmlFilename += ".html";
         
         // copy and paste htmlFilename into chrome's save dialog
-        StringSelection ss = new StringSelection(htmlFilename);
-        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
+        blockingCopy(htmlFilename);
         
         robot.keyPress(KeyEvent.VK_CONTROL);
         robot.keyPress(KeyEvent.VK_V);
@@ -606,5 +614,36 @@ public class Harvester {
         robot.keyPress(KeyEvent.VK_ENTER);
         robot.keyRelease(KeyEvent.VK_ENTER);
         return htmlFilename;
+    }
+    
+    /**
+     * Copies the given String to the clipboard, only returning after the String has completed
+     * copying.
+     * @param s The string to copy to system clipboard.
+     * @return true if no error occurred, false otherwise.
+     */
+    private boolean blockingCopy(String s) {
+        StringSelection ss = new StringSelection(s);
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
+        
+        String clipboardStr;
+        try {
+            clipboardStr = (String) Toolkit.getDefaultToolkit()
+                    .getSystemClipboard().getData(DataFlavor.stringFlavor);
+        } catch (HeadlessException | UnsupportedFlavorException | IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+        while (!clipboardStr.equals(s)) {
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
+            try {
+                clipboardStr = (String) Toolkit.getDefaultToolkit()
+                        .getSystemClipboard().getData(DataFlavor.stringFlavor);
+            } catch (HeadlessException | UnsupportedFlavorException | IOException e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+        return true;
     }
 }

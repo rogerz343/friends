@@ -95,7 +95,7 @@ public class FriendsHtmlParser {
             }
             
             if (numReadAttempts > 12) {
-                System.out.println("extractFriendsInfo(): waited " + numReadAttempts + " seconds to open file: " + filepath);
+                System.err.println("extractFriendsInfo(): waited " + numReadAttempts + " seconds to open file: " + filepath);
             }
         }
         

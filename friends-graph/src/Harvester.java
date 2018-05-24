@@ -46,7 +46,7 @@ public class Harvester {
     private Set<Person> inQueuePeople;
     private Deque<Person> downloadQueue;
     
-    private InterruptibleRobot robot;
+    private IRWrapper robot;
     private final String logFilePath;
     
     private static String LOG_FILE = "harvester.log";
@@ -94,9 +94,7 @@ public class Harvester {
         inQueuePeople = new HashSet<>();
         downloadQueue = new ArrayDeque<>();
         
-        robot = new InterruptibleRobot();
-        robot.setAutoWaitForIdle(true);
-        robot.setAutoDelay(150);
+        robot = new IRWrapper(true, 150);
         
         isNewHarvester = true;
         FriendsFiles.writeLog(logFilePath, "Initialized new Harvester.");
@@ -107,8 +105,9 @@ public class Harvester {
      * state parameters. Constructs a new Harvester based on those parameters.
      * @param dir The directory containing the HARVESTER_STATE_FILE file.
      * @throws IOException 
+     * @throws AWTException 
      */
-    public Harvester(String dir) throws IOException {
+    public Harvester(String dir) throws IOException, AWTException {
         Path stateFilePath = Paths.get(dir, HARVESTER_STATE_FILE);
         List<String> lines = Files.readAllLines(stateFilePath);
         
@@ -150,6 +149,8 @@ public class Harvester {
             downloadQueue.add(p);
         }
         
+        robot = new IRWrapper(true, 150);
+        
         isNewHarvester = false;
         FriendsFiles.writeLog(logFilePath, "Loaded Harvester from \"" + dir + "\".");
     }
@@ -170,7 +171,14 @@ public class Harvester {
         FriendsFiles.writeLog(logFilePath, "beginNewHarvest(): starting.");
         
         // first, download the information from the source (usually your own fb page)
-        String rootUserHtmlName = harvestSingleFriendsPage();
+        String rootUserHtmlName;
+        try {
+            rootUserHtmlName = harvestSingleFriendsPage();
+        } catch (RobotInterruptedException e1) {
+            FriendsFiles.writeLog(logFilePath, "beginNewHarvest(): robot interrupted. exiting.");
+            e1.printStackTrace();
+            return false;
+        }
         
         // retrieve the html file when it is ready (when the download is complete)
         Path rootUserHtmlPath = Paths.get(downloadsDir, rootUserHtmlName).toAbsolutePath();
@@ -239,7 +247,14 @@ public class Harvester {
                 continue;
             }
             
-            String userHtmlName = harvestSingleFriendsPage(user);
+            String userHtmlName;
+            try {
+                userHtmlName = harvestSingleFriendsPage(user);
+            } catch (RobotInterruptedException e1) {
+                FriendsFiles.writeLog(logFilePath, "harvestAllPages(): robot interrupted. exiting.");
+                e1.printStackTrace();
+                return false;
+            }
             
             // retrieve the html file when it is ready
             Path userHtmlPath = Paths.get(downloadsDir, userHtmlName).toAbsolutePath();
@@ -303,15 +318,7 @@ public class Harvester {
             }
             numDownloaded++;
             
-            // if robot was interrupted, don't go on to remove the current user from
-            // the queue and don't save the state.
-            if (robot.interrupted) {
-                FriendsFiles.writeLog(logFilePath, "harvestAllPages(): robot interrupted. "
-                        + "Exiting method.");
-                return false;
-            }
-            
-            // reaching here means everything went correctly
+            // reaching here means robot was not interrupted and everything went correctly
             
             FriendsFiles.writeLog(logFilePath, "harvestAllPages(): successfully retrieved.");
             inQueuePeople.remove(user);
@@ -349,8 +356,9 @@ public class Harvester {
      * @param dir The parameter to pass into the Harvester(String dir) constructor.
      * @return A new Harvester constructed using the `dir` parameter.
      * @throws IOException 
+     * @throws AWTException 
      */
-    public static Harvester loadHarvester(String dir) throws IOException {
+    public static Harvester loadHarvester(String dir) throws IOException, AWTException {
         return new Harvester(dir);
     }
     
@@ -425,8 +433,9 @@ public class Harvester {
      * - chrome's downloads bar (at the bottom of the page) is OPEN
      * - chrome's developer tools panel is CLOSED
      * @return The name of the html file that was saved, or null if an error occurred.
+     * @throws RobotInterruptedException 
      */
-    public String harvestSingleFriendsPage() {
+    public String harvestSingleFriendsPage() throws RobotInterruptedException {
         scrollToBottom(100);
         return fetchHtml();
     }
@@ -436,8 +445,9 @@ public class Harvester {
      * friends loaded.
      * @param person The Person whose Friends page html document we want to harvest.
      * @return The name of the html file that was saved, or null if an error occurred.
+     * @throws RobotInterruptedException 
      */
-    public String harvestSingleFriendsPage(Person person) {
+    public String harvestSingleFriendsPage(Person person) throws RobotInterruptedException {
         // close any potential open chrome dialogue
 //        robot.keyPress(KeyEvent.VK_ESCAPE);
 //        robot.keyRelease(KeyEvent.VK_ESCAPE);
@@ -452,8 +462,9 @@ public class Harvester {
      * navigates to the Friends page, given the person.
      * @param person The Person whose Friends page we want to navigate to.
      * @return 0 if no error occurred, 1 otherwise.
+     * @throws RobotInterruptedException 
      */
-    private int viewFriendsPage(Person person) {
+    private int viewFriendsPage(Person person) throws RobotInterruptedException {
         // make sure window is in focus
         robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
@@ -496,8 +507,9 @@ public class Harvester {
      * be active for before returning. As a (very approximate) reference, it takes about
      * 100 seconds to scroll down a friends page that contains 1200 friends.
      * @return true if no error (including timeout) occurred, false otherwise.
+     * @throws RobotInterruptedException 
      */
-    private boolean scrollToBottom(long timeout) {
+    private boolean scrollToBottom(long timeout) throws RobotInterruptedException {
         // make sure window is in focus
         // TODO: commented out for now b/c it registers as a double click
 //        robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
@@ -566,8 +578,9 @@ public class Harvester {
      * webpage. Also assumes that chrome's save "Webpage, complete" saves the dynamically generated
      * html (not the source code).
      * @return The filename of the html file that was downloaded, or null if an error occurred.
+     * @throws RobotInterruptedException 
      */
-    private String fetchHtml() {
+    private String fetchHtml() throws RobotInterruptedException {
         robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);

@@ -24,8 +24,10 @@ The program (currently) only runs correctly on Windows 10. Note that there could
 - `findCliques()` with `|V| = (5660/250)`, `|E| = 17600` (where `(a/b)` means `a` total nodes and `b` nodes that we have complete information about): 252 seconds
 - 250 small .html files along with the _files source folder: 3.5 GB
 
-## TODO, bugs, and other possible improvements
+## Bugs
+- During development, lots of bugs were observed relating to copying and pasting the incorrect Strings from clipboard. I suspect that it has to do with previous instances of `Harvester` and `InterruptibleRobot`s (or other `Robot`s) whose threads were not closed and thus continued to perform copy/paste operations while the current program was running. These can be seen on Windows Task Manager (as a running java binary).
+
+## TODO, possible improvements
 - Revamp file I/O to only use java's files and paths libraries (`java.nio.\*`)
 - Fix some potentially confusing code relating to mixing up `Path` vs `String` as arguments
 - Use asynchronous functions and callbacks to improve speed and reliability (currently, the program usually calls Thread.sleep() if it needs to wait for a process to finish)
-- The use of Thread.sleep() in order to "wait" for events to occur may cause problems with race conditions. For example, using the robot to press "ctrl-c" to copy text into the Windows clipboard, then waiting for a small amount of time, then extracting the information from the Windows clipboard.

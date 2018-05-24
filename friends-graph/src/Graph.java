@@ -101,10 +101,12 @@ public class Graph<V> {
     }
     
     /**
-     * Returns the sequence of nodes on a shortest path from u to v, including the nodes u and v.
+     * Returns the sequence of distinct nodes on a shortest path from u to v, including the
+     * nodes u and v.
      * @param u A node in the graph.
      * @param v A node in the graph.
-     * @return
+     * @return The sequence of distinct nodes on a shortest path from u to v, including the
+     * nodes u and v. Returns null if no such path exists.
      */
     public List<V> getShortestPath(V u, V v) {
         if (u.equals(v)) {
@@ -134,8 +136,8 @@ public class Graph<V> {
                 }
             }
         }
+        if (parents.get(v) == null) { return null; }
         List<V> result = new ArrayList<>();
-        if (parents.get(v) == null) { return result; }
         V curr = v;
         while (parents.get(curr) != null) {
             result.add(curr);
@@ -223,21 +225,71 @@ public class Graph<V> {
     
     /**
      * Finds the maximum flow from the given source node to the given sink node. This method
-     * implements the Edmonds-Karp variation of Ford-Fulkerson method.
+     * implements the Edmonds-Karp variation of Ford-Fulkerson method using adjacency lists.
      * @param source The source node.
      * @param sink The sink node.
      * @return The value of the maximum flow from source to sink.
      */
     public int maxFlow(V source, V sink) {
-        // first create a copy of the adjacency lists to restore to later
-        Map<V, List<V>> adjListBackup = new HashMap<>();
+        // create a copy of the adjacency list but with values for each edge's capacity and flow
+        Map<V, List<FlowEdge>> flowGraph = new HashMap<>();
         for (Map.Entry<V, List<V>> e : adjList.entrySet()) {
-            adjListBackup.put(e.getKey(), new ArrayList<>(e.getValue()));
+            List<FlowEdge> edges = new ArrayList<>();
+            for (V node2 : e.getValue()) {
+                edges.add(new FlowEdge(e.getKey(), node2, 1, 0));
+            }
+            flowGraph.put(e.getKey(), edges);
         }
         int flow = 0;
         
-        // TODO: finish this
-        return 0;
+        while (true) {
+            // find shortest augmenting path (note that this is different from getShortestPath())
+            Map<V, V> parents = new HashMap<>();
+            Deque<V> queue = new ArrayDeque<>();
+            queue.add(source);
+            while (!queue.isEmpty() && parents.get(sink) == null) {
+                V curr = queue.remove();
+                for (FlowEdge fe : flowGraph.get(curr)) {
+                    if (parents.get(fe.node2) == null && !node2.equals(source)
+                            && fe.capacity > fe.flow) {
+                        parents.put(fe.node2, curr);
+                        queue.add(fe.node2);
+                    }
+                    if (fe.node2 == sink) {
+                        break;
+                    }
+                }
+            }
+            
+            // augment flow with the new augmenting path, if it exists
+            if (parents.get(sink) != null) {
+                int pathFlow = Integer.MAX_VALUE;
+                List<FlowEdge> pathEdges = new ArrayList<>();
+                V curr = sink;
+                while (parents.get(curr) != null) {
+                    V parent = parents.get(curr);
+                    for (V childEdge : flowGraph.get(parent)) {
+                        if (childEdge.node2.equals(curr)) {
+                            pathFlow = Math.min(pathFlow, childEdge.capacity - childEdge.flow);
+                            pathEdges.add(childEdge);
+                            break;
+                        }
+                    }
+                    curr = parent;
+                }
+                for (FlowEdge pathEdge : pathEdges) {
+                    pathEdge.flow += pathFlow;
+                    for (FlowEdge reversedFe : flowGraph.get(pathEdge.node2)) {
+                        if (reversedFe.node2.equals(pathEdge.node1)) {
+                            reversedFe.flow -= pathFlow;
+                        }
+                    }
+                }
+                flow += pathFLow;
+            } else {
+                return flow;
+            }
+        }
     }
     
     /**
@@ -333,12 +385,32 @@ public class Graph<V> {
         }
     }
     
+    /**
+     * Useful for assigning int values to nodes and for assigning weights
+     * to edges.
+     */
     private class NodeIntPair {
         public V node;
         public int val;
         public NodeIntPair(V node, int val) {
             this.node = node;
             this.val = val;
+        }
+    }
+
+    /**
+     * Represents a directed edge from {@code node1} to {@code node2} in a graph with flows.
+     */
+    private class FlowEdge {
+        public V node1;
+        public V node2;
+        public int capacity;
+        public int flow;
+        public FlowEdge(V node1, V node2, int capacity, int flow) {
+            this.node1 = node1;
+            this.node2 = node2;
+            this.capacity = capacity;
+            this.flow = flow;
         }
     }
 }

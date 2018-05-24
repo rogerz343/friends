@@ -1,5 +1,6 @@
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,10 +10,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * A representation of an undirected graph with nodes of type V
+ * A representation of an undirected graph with nodes of type V. Nodes equality
+ * is tested using .equals()
  * @author roger
  *
- * @param <V> the type class of the nodes
+ * @param <V> The type class of the nodes. Ensuring that the nodes don't mutate is left as
+ * an exercise for the user of this class.
  */
 public class Graph<V> {
     
@@ -81,6 +84,65 @@ public class Graph<V> {
             numEdges += l.size();
         }
         return numEdges / 2;
+    }
+    
+    public List<V> getNeighbors(V u) {
+        return new ArrayList<>(adjList.get(u));
+    }
+    
+    /**
+     * Returns the length of the shortest path between u and v.
+     * @param u A node in the graph.
+     * @param v A node in the graph.
+     * @return The length of the shortest path between u and v.
+     */
+    public int getDistance(V u, V v) {
+        return getShortestPath(u, v).size() - 1;
+    }
+    
+    /**
+     * Returns the sequence of nodes on a shortest path from u to v, including the nodes u and v.
+     * @param u A node in the graph.
+     * @param v A node in the graph.
+     * @return
+     */
+    public List<V> getShortestPath(V u, V v) {
+        if (u.equals(v)) {
+            List<V> result = new ArrayList<>();
+            result.add(u);
+            return result;
+        }
+        Map<V, V> parents = new HashMap<>();
+        Set<V> discovered = new HashSet<>();
+        Deque<V> queue = new ArrayDeque<>();
+        discovered.add(u);
+        queue.add(u);
+        while (!queue.isEmpty()) {
+            int size = queue.size();
+            for (int i = 0; i < size; i++) {
+                V a = queue.remove();
+                for (V b : adjList.get(a)) {
+                    if (!discovered.contains(b)) {
+                        parents.put(b, a);
+                        discovered.add(b);
+                        queue.add(b);
+                        
+                        if (b.equals(v)) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        List<V> result = new ArrayList<>();
+        if (parents.get(v) == null) { return result; }
+        V curr = v;
+        while (parents.get(curr) != null) {
+            result.add(curr);
+            curr = parents.get(curr);
+        }
+        Collections.reverse(result);
+        return result;
     }
     
     /**
@@ -160,6 +222,25 @@ public class Graph<V> {
     }
     
     /**
+     * Finds the maximum flow from the given source node to the given sink node. This method
+     * implements the Edmonds-Karp variation of Ford-Fulkerson method.
+     * @param source The source node.
+     * @param sink The sink node.
+     * @return The value of the maximum flow from source to sink.
+     */
+    public int maxFlow(V source, V sink) {
+        // first create a copy of the adjacency lists to restore to later
+        Map<V, List<V>> adjListBackup = new HashMap<>();
+        for (Map.Entry<V, List<V>> e : adjList.entrySet()) {
+            adjListBackup.put(e.getKey(), new ArrayList<>(e.getValue()));
+        }
+        int flow = 0;
+        
+        // TODO: finish this
+        return 0;
+    }
+    
+    /**
      * Finds all maximal cliques in the graph whose size is at least minSize and returns
      * them in descending order of their size.
      * @param minSize the minimum size of a maximal clique that is returned.
@@ -182,10 +263,10 @@ public class Graph<V> {
     
     /**
      * Finds the maximum cliques in the graph `adjList`
-     * @param R Parameter for the Bron Kerbosh algorithm
-     * @param P Parameter for the Bron Kerbosh algorithm
-     * @param X Parameter for the Bron Kerbosh algorithm
-     * This method implements the BronKerbosh2 algorithm given at
+     * @param R Parameter for the Bron Kerbosch algorithm
+     * @param P Parameter for the Bron Kerbosch algorithm
+     * @param X Parameter for the Bron Kerbosch algorithm
+     * This method implements the BronKerbosch2 algorithm given at
      * <https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm>
      */
     private void BronKerboschPivoting(Set<V> R, Set<V> P, Set<V> X) {
@@ -220,10 +301,10 @@ public class Graph<V> {
     
     /**
      * Finds the maximum cliques in the graph `adjList`
-     * @param R Parameter for the Bron Kerbosh algorithm
-     * @param P Parameter for the Bron Kerbosh algorithm
-     * @param X Parameter for the Bron Kerbosh algorithm
-     * This method implements the BronKerbosh3 algorithm given at
+     * @param R Parameter for the Bron Kerbosch algorithm
+     * @param P Parameter for the Bron Kerbosch algorithm
+     * @param X Parameter for the Bron Kerbosch algorithm
+     * This method implements the BronKerbosch3 algorithm given at
      * <https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm>
      */
     private void BronKerboschVertexOrdering() {

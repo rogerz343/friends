@@ -26,7 +26,8 @@ public class Main {
         long startTime = System.nanoTime();
         System.out.println("Program started at: " + LocalDateTime.now());
         
-        saveGraphInfo("cliques.txt");
+        harvestAll();
+        // saveGraphInfo("cliques.txt");
         
         long endTime = System.nanoTime();
         System.out.println("Program ran for " + ((endTime - startTime) / 1000000000) + " seconds.");

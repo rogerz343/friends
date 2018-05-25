@@ -21,8 +21,10 @@ public class Graph<V> {
     
     private Map<V, List<V>> adjList = new HashMap<>();
     
-    // global variable used for cliques algorithm
+    // the list of maximal cliques calculated from getCliques()
     private List<List<V>> maximalCliques = null;
+    // the max flow calculated from the latest call to edmondsKarp()
+    private int maxFlow = -1;
     
     /**
      * Creates an empty graph (with zero nodes and zero edges)
@@ -74,30 +76,50 @@ public class Graph<V> {
         }
     }
     
-    public int getNumNodes() {
+    public int numNodes() {
         return adjList.size();
     }
     
-    public int getNumEdges() {
+    public int numEdges() {
         int numEdges = 0;
         for (List<V> l : adjList.values()) {
             numEdges += l.size();
         }
         return numEdges / 2;
     }
+
+    public List<V> nodes() {
+        return new ArrayList<>(adjList.keySet());
+    }
     
-    public List<V> getNeighbors(V u) {
+    public List<V> neighbors(V u) {
         return new ArrayList<>(adjList.get(u));
+    }
+
+    /**
+     * Returns a copy of the adjacency lists of this graph.
+     * @return a copy of the adjacency lists of this graph.
+     */
+    public Map<V, List<V>> adjList() {
+        Map<V, List<V>> copy = new HashMap<>();
+        for (Map.Entry<V, List<V>> e : adjList.entrySet()) {
+            List<V> neighbors = new ArrayList<>();
+            for (V v : e.getValue()) {
+                neighbors.add(v);
+            }
+            map.put(e.getKey(), neighbors);
+        }
+        return copy;
     }
     
     /**
-     * Returns the length of the shortest path between u and v.
+     * Returns the length of the shortest path between u and v (the number of edges in the path).
      * @param u A node in the graph.
      * @param v A node in the graph.
      * @return The length of the shortest path between u and v.
      */
-    public int getDistance(V u, V v) {
-        return getShortestPath(u, v).size() - 1;
+    public int distance(V u, V v) {
+        return shortestPath(u, v).size() - 1;
     }
     
     /**
@@ -108,7 +130,7 @@ public class Graph<V> {
      * @return The sequence of distinct nodes on a shortest path from u to v, including the
      * nodes u and v. Returns null if no such path exists.
      */
-    public List<V> getShortestPath(V u, V v) {
+    public List<V> shortestPath(V u, V v) {
         if (u.equals(v)) {
             List<V> result = new ArrayList<>();
             result.add(u);
@@ -159,11 +181,11 @@ public class Graph<V> {
      * length-2 paths from those nodes to u (e.g. number of mutual
      * friends they have with u).
      */
-    public List<V> getSuggestedFriends(V u, int minMutualFriends) {
-        List<V> candidates = getDistanceDNodes(u, 2);
+    public List<V> suggestedFriendsFor(V u, int minMutualFriends) {
+        List<V> candidates = distanceDFrome(u, 2);
         List<NodeIntPair> candidatesFiltered = new ArrayList<>();
         for (V v : candidates) {
-            List<V> mutualFriends = getMutualFriends(u, v);
+            List<V> mutualFriends = mutualFriendsOf(u, v);
             if (mutualFriends.size() >= minMutualFriends) {
                 candidatesFiltered.add(new NodeIntPair(v, mutualFriends.size()));
             }
@@ -180,7 +202,7 @@ public class Graph<V> {
      * @param w A node in the graph.
      * @return
      */
-    public List<V> getMutualFriends(V u, V w) {
+    public List<V> mutualFriendsOf(V u, V w) {
         Set<V> uNeighbors = new HashSet<>();
         for (V uNeighbor : adjList.get(u)) {
             uNeighbors.add(uNeighbor);
@@ -199,7 +221,7 @@ public class Graph<V> {
      * @param source A node in the graph.
      * @return A list of all of the nodes that are exactly distance d away from the source.
      */
-    public List<V> getDistanceDNodes(V source, int d) {
+    public List<V> distanceDFrom(V source, int d) {
         Set<V> discovered = new HashSet<>();
         Deque<V> queue = new ArrayDeque<>();
         discovered.add(source);
@@ -222,15 +244,67 @@ public class Graph<V> {
         }
         return new ArrayList<>();
     }
-    
+
     /**
-     * Finds the maximum flow from the given source node to the given sink node. This method
-     * implements the Edmonds-Karp variation of Ford-Fulkerson method using adjacency lists.
+     * Finds the maximum flow from the source to the sink, assuming that all edges have capacity 1.
      * @param source The source node.
      * @param sink The sink node.
-     * @return The value of the maximum flow from source to sink.
+     * @return The value of the maximum flow from the source to the sink.
      */
     public int maxFlow(V source, V sink) {
+        if (flow == -1) {
+            edmondsKarp(source, sink);
+        }
+        return maxFlow;
+    }
+
+
+    public int highestDensitySubgraph(V s, V t) {
+        // temporarily add a source and sink
+        
+    }
+
+    /**
+     * Finds the minimum s-t cut of the flow network
+     * @param s A node in the graph.
+     * @param t A node in the graph (distinct from t).
+     * @return The nodes for each of the two parts of the minimum cut (partition) of the graph.
+     * Each part is a {@code List} of nodes and the two {@code List}s are in the 0th and 1st
+     * indices of the returned array.
+     */
+    public List<V>[] minCutPartition(V s, V t) {
+        Map<V, List<FlowEdge>> residual = edmondsKarp(s, t);
+        Set<V> discovered = new HashSet<>();
+        discovered.add(s);
+        Deque<V> queue = new ArrayDeque<>();
+        queue.add(s);
+        while (!queue.isEmpty()) {
+            V curr = queue.remove();
+            for (FlowEdge fe : residual.get(curr)) {
+                if (fe.capacity - fe.flow > 0) {
+                    discovered.add(fe.node2);
+                    queue.add(fe.node2);
+                }
+            }
+        }
+        List<V> partition1 = new ArrayList<>(discovered);
+        List<V> partition2 = new ArrayList<>();
+        for (V v : nodes()) {
+            if (!discovered.contains(v)) {
+                partition2.add(v);
+            }
+        }
+        return new List<V>[]{ partition1, partition2 };
+    }
+    
+    /**
+     * Performs the Edmonds-Karp variation of Ford-Fulkerson method using adjacency lists and
+     * returns the residual flow network.
+     * @param source The source node.
+     * @param sink The sink node.
+     * @return The final residual flow network after running the Edmonds-Karp algorithm.
+     */
+    private Map<V, List<FlowEdge>> edmondsKarp(V source, V sink) {
         // create a copy of the adjacency list but with values for each edge's capacity and flow
         Map<V, List<FlowEdge>> flowGraph = new HashMap<>();
         for (Map.Entry<V, List<V>> e : adjList.entrySet()) {
@@ -240,10 +314,11 @@ public class Graph<V> {
             }
             flowGraph.put(e.getKey(), edges);
         }
+
         int flow = 0;
         
         while (true) {
-            // find shortest augmenting path (note that this is different from getShortestPath())
+            // find shortest augmenting path (note that this is different from shortestPath())
             Map<V, V> parents = new HashMap<>();
             Deque<V> queue = new ArrayDeque<>();
             queue.add(source);
@@ -284,117 +359,12 @@ public class Graph<V> {
                             reversedFe.flow -= pathFlow;
                         }
                     }
+                    flow += pathFlow;
                 }
-                flow += pathFLow;
             } else {
-                return flow;
+                this.flow = flow;
+                return flowGraph;
             }
-        }
-    }
-    
-    /**
-     * Finds all maximal cliques in the graph whose size is at least minSize and returns
-     * them in descending order of their size.
-     * @param minSize the minimum size of a maximal clique that is returned.
-     * @return A list of maximal cliques in the graph sorted in descending order by their
-     * size, where each clique is represented as a list of `Person`s.
-     * This method uses the Bron-Kerbosch algorithm with vertex ordering and pivoting.
-     */
-    public List<List<V>> getMaximalCliques(int minSize) {
-        maximalCliques = new ArrayList<>();
-        BronKerboschVertexOrdering();
-        List<List<V>> ans = new ArrayList<>();
-        for (List<V> clique : maximalCliques) {
-            if (clique.size() >= minSize) {
-                ans.add(new ArrayList<>(clique));
-            }
-        }
-        ans.sort((l1, l2) -> l2.size() - l1.size());
-        return ans;
-    }
-    
-    /**
-     * Finds the maximum cliques in the graph `adjList`
-     * @param R Parameter for the Bron Kerbosch algorithm
-     * @param P Parameter for the Bron Kerbosch algorithm
-     * @param X Parameter for the Bron Kerbosch algorithm
-     * This method implements the BronKerbosch2 algorithm given at
-     * <https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm>
-     */
-    private void BronKerboschPivoting(Set<V> R, Set<V> P, Set<V> X) {
-        if (P.isEmpty() && X.isEmpty()) {
-            maximalCliques.add(new ArrayList<>(R));
-            return;
-        }
-        V pivot;
-        if (!P.isEmpty()) {
-            pivot = P.iterator().next();
-        } else {
-            pivot = X.iterator().next();
-        }
-        Set<V> pivotNeighbors = new HashSet<>(adjList.get(pivot));
-        Set<V> PCopy = new HashSet<>(P);
-        for (V v : PCopy) {
-            if (pivotNeighbors.contains(v)) { continue; }
-            
-            R.add(v);
-            Set<V> vNeighbors = new HashSet<>(adjList.get(v));
-            Set<V> PPrime = new HashSet<>(P);
-            PPrime.retainAll(vNeighbors);
-            Set<V> XPrime = new HashSet<>(X);
-            XPrime.retainAll(vNeighbors);
-            
-            BronKerboschPivoting(R, PPrime, XPrime);
-            R.remove(v);
-            P.remove(v);
-            X.add(v);
-        }
-    }
-    
-    /**
-     * Finds the maximum cliques in the graph `adjList`
-     * @param R Parameter for the Bron Kerbosch algorithm
-     * @param P Parameter for the Bron Kerbosch algorithm
-     * @param X Parameter for the Bron Kerbosch algorithm
-     * This method implements the BronKerbosch3 algorithm given at
-     * <https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm>
-     */
-    private void BronKerboschVertexOrdering() {
-        Set<V> P = new HashSet<>(adjList.keySet());
-        Set<V> R = new HashSet<>();
-        Set<V> X = new HashSet<>();
-        List<NodeIntPair> degeneracyOrdering = new ArrayList<>();
-        for (Map.Entry<V, List<V>> e : adjList.entrySet()) {
-            degeneracyOrdering.add(new NodeIntPair(e.getKey(), e.getValue().size()));
-        }
-        degeneracyOrdering.sort((p1, p2) -> p1.val - p2.val);
-        for (NodeIntPair p : degeneracyOrdering) {
-            V v = p.node;
-            
-            R.add(v);
-            Set<V> vNeighbors = new HashSet<>(adjList.get(v));
-            Set<V> PPrime = new HashSet<>(P);
-            PPrime.retainAll(vNeighbors);
-            Set<V> XPrime = new HashSet<>(X);
-            XPrime.retainAll(vNeighbors);
-            
-            BronKerboschPivoting(R, PPrime, XPrime);
-            R.remove(v);
-            P.remove(v);
-            X.add(v);
-        }
-    }
-    
-    /**
-     * Useful for assigning int values to nodes and for assigning weights
-     * to edges.
-     */
-    private class NodeIntPair {
-        public V node;
-        public int val;
-        public NodeIntPair(V node, int val) {
-            this.node = node;
-            this.val = val;
         }
     }
 

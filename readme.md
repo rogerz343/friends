@@ -39,8 +39,8 @@ The program (currently) only runs correctly on Windows 10. Note that there could
 - `maximalCliquesContaining()` with `|X| = 440, |Y| = 0, |E| = 15000`
   - num recursive calls:
   - run time: 435 seconds
-  - num maximal cliques of size 1 or 2:
-  - num maximal cliques of size >= 3:
+  - num maximal cliques of size 1-4:
+  - num maximal cliques of size >= 5:
   - maximum clique size:
 - `allMaximalCliques()` with `|X| = 450, |Y| = 181700, |E| = 298252, Delta = 2000`:
   - num recursive calls:

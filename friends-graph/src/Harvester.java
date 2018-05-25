@@ -230,7 +230,25 @@ public class Harvester {
      */
     public boolean harvestAllPages() {
         FriendsFiles.writeLog(logFilePath, "harvestAllPages(): starting.");
+        int numLoops = 0;
         while (numDownloaded < maxNumPeople && !downloadQueue.isEmpty()) {
+            // state state every now and then
+            if (numLoops % 5 == 0) {
+                try {
+                    FriendsFiles.writeLog(logFilePath,
+                            "harvestAllPages(): saving Harvester state.");
+                    saveHarvester();
+                } catch (IOException e) {
+                    // could not save Harvester state for some reason, just continue
+                    // and hopefully it'll save correctly during the next loop
+                    FriendsFiles.writeLog(logFilePath, "harvestAllPages(): IOException thrown "
+                            + "by saveHarvester(). Moving on without saving.");
+                    e.printStackTrace();
+                }
+            }
+            numLoops++;
+            
+            // get information about user
             Person user = downloadQueue.peek();
             
             // used for human-readable log file messages
@@ -323,21 +341,6 @@ public class Harvester {
             FriendsFiles.writeLog(logFilePath, "harvestAllPages(): successfully retrieved.");
             inQueuePeople.remove(user);
             downloadQueue.remove();
-            
-            // state state every now and then
-            if (numDownloaded % 5 == 0) {
-                try {
-                    FriendsFiles.writeLog(logFilePath,
-                            "harvestAllPages(): saving Harvester state.");
-                    saveHarvester();
-                } catch (IOException e) {
-                    // could not save Harvester state for some reason, just continue
-                    // and hopefully it'll save correctly during the next loop
-                    FriendsFiles.writeLog(logFilePath, "harvestAllPages(): IOException thrown "
-                            + "by saveHarvester(). Moving on without saving.");
-                    e.printStackTrace();
-                }
-            }
             
             // TODO: delete the .js, .css, etc. source folders associated with the html document
         }

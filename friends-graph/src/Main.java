@@ -26,8 +26,9 @@ public class Main {
         long startTime = System.nanoTime();
         System.out.println("Program started at: " + LocalDateTime.now());
         
-        harvestAll();
-        // saveGraphInfo("cliques.txt");
+        // runHarvestAll();
+        // resumeHarvest();
+        saveGraphInfo("roger-cliques.txt");
         
         long endTime = System.nanoTime();
         System.out.println("Program ran for " + ((endTime - startTime) / 1000000000) + " seconds.");
@@ -37,7 +38,10 @@ public class Main {
         Graph<Person> graph = loadIntoGraph(OUTPUT_DIR);
         System.out.println("Number of nodes: " + graph.getNumNodes());
         System.out.println("Number of edges: " + graph.getNumEdges());
-        List<List<Person>> cliques = graph.getMaximalCliques(3);
+        List<List<Person>> cliques = graph.getMaximalCliques(1);
+        
+        System.out.println("num calls: " + graph.numCalls);
+        System.out.println("num cliques size >= 3: " + cliques.size());
         
         Path path = Paths.get(DOWNLOADS_DIR, filename);
         path = Files.createFile(path);
@@ -57,10 +61,11 @@ public class Main {
             l.remove(0);
             adjList.put(p, l);
         }
+        System.out.println("Number of complete-info nodes: " + adjList.size());
         return new Graph<Person>(adjList);
     }
 
-    public static boolean harvestAll() throws IOException {
+    public static boolean runHarvestAll() throws IOException {
         // give the user some time to set up the facebook page correctly
         try {
             Thread.sleep(2000);
@@ -76,5 +81,23 @@ public class Main {
             return false;
         }
         return h.beginNewHarvest();
+    }
+    
+    public static boolean resumeHarvest() throws IOException {
+        // give the user some time to set up the facebook page correctly
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Harvester h;
+        try {
+            h = new Harvester(OUTPUT_DIR);
+        } catch (AWTException e) {
+            e.printStackTrace();
+            System.out.println("Could not create Harvester");
+            return false;
+        }
+        return h.harvestAllPages();
     }
 }

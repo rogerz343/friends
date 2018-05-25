@@ -239,7 +239,7 @@ public class Graph<V> {
         // TODO: finish this
         return 0;
     }
-    
+        
     /**
      * Finds all maximal cliques in the graph whose size is at least minSize and returns
      * them in descending order of their size.
@@ -261,6 +261,8 @@ public class Graph<V> {
         return ans;
     }
     
+    public long numCalls = 0;
+    
     /**
      * Finds the maximum cliques in the graph `adjList`
      * @param R Parameter for the Bron Kerbosch algorithm
@@ -270,6 +272,7 @@ public class Graph<V> {
      * <https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm>
      */
     private void BronKerboschPivoting(Set<V> R, Set<V> P, Set<V> X) {
+        numCalls++;
         if (P.isEmpty() && X.isEmpty()) {
             maximalCliques.add(new ArrayList<>(R));
             return;
@@ -299,6 +302,8 @@ public class Graph<V> {
         }
     }
     
+    public long nodesProcessedTopLevel = 0;
+    
     /**
      * Finds the maximum cliques in the graph `adjList`
      * @param R Parameter for the Bron Kerbosch algorithm
@@ -308,6 +313,7 @@ public class Graph<V> {
      * <https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm>
      */
     private void BronKerboschVertexOrdering() {
+        numCalls++;
         Set<V> P = new HashSet<>(adjList.keySet());
         Set<V> R = new HashSet<>();
         Set<V> X = new HashSet<>();
@@ -316,7 +322,12 @@ public class Graph<V> {
             degeneracyOrdering.add(new NodeIntPair(e.getKey(), e.getValue().size()));
         }
         degeneracyOrdering.sort((p1, p2) -> p1.val - p2.val);
+        long startTime = System.nanoTime();
         for (NodeIntPair p : degeneracyOrdering) {
+            if (nodesProcessedTopLevel % 1000 == 0) {
+                System.out.println("nodes processed: " + nodesProcessedTopLevel);
+                System.out.println("Time for the last 1000 nodes: " + ((System.nanoTime() - startTime) / 1000000000) + " seconds.");
+            }
             V v = p.node;
             
             R.add(v);
@@ -330,7 +341,11 @@ public class Graph<V> {
             R.remove(v);
             P.remove(v);
             X.add(v);
+            nodesProcessedTopLevel++;
         }
+        
+        System.out.println("nodes processed: " + nodesProcessedTopLevel);
+        System.out.println("Time for the last 1000 nodes: " + ((System.nanoTime() - startTime) / 1000000000) + " seconds.");
     }
     
     private class NodeIntPair {

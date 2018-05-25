@@ -39,25 +39,20 @@ The program (currently) only runs correctly on Windows 10. Note that there could
 - `maximalCliquesContaining()` with `|X| = 440, |Y| = 0, |E| = 15000`
   - num recursive calls:
   - run time: 435 seconds
-  - num maximal cliques of size 1-4:
-  - num maximal cliques of size >= 5:
-  - maximum clique size:
+  - num maximal cliques: 1131211
+  - maximum clique size: 46
 - `allMaximalCliques()` with `|X| = 450, |Y| = 181700, |E| = 298252, Delta = 2000`:
-  - num recursive calls:
-  - run time:
   - time to process first 10000 nodes: 385 seconds
   - time to process first 100000 nodes: 3924 seconds
   - time to process first 181000 nodes: 7549 seconds
   - time to process last 1000 nodes: [untested, manually terminated after 6 hours]
-  - num maximal cliques of size 1 or 2:
-  - num maximal cliques of size >= 3:
-  - maximum clique size:
 - `allMaximalCliques()` with `|X| = 250, |Y| = 5660, |E| = 17600, Delta = 100`:
   - num recursive calls: 35787174
   - run time: 237 seconds (2 seconds for first 5000 nodes + 235 seconds for remaining 660)
   - num maximal cliques of size 1 or 2: 5037
   - num maximal cliques of size >= 3: 127867
   - maximum clique size: 37
+
 ### Storage
 - 250 small .html files along with the _files source folder: 3.5 GB
 - 350 near-complete .html files along with the _files source folder: 8 GB

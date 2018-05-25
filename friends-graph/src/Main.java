@@ -36,11 +36,11 @@ public class Main {
     
     public static void saveGraphInfo(String filename) throws IOException {
         Graph<Person> graph = loadIntoGraph(OUTPUT_DIR);
-        System.out.println("Number of nodes: " + graph.getNumNodes());
-        System.out.println("Number of edges: " + graph.getNumEdges());
-        List<List<Person>> cliques = graph.getMaximalCliques(1);
+        System.out.println("Number of nodes: " + graph.numNodes());
+        System.out.println("Number of edges: " + graph.numEdges());
+        List<List<Person>> cliques = Graphs.allMaximalCliques(graph, 1);
         
-        System.out.println("num calls: " + graph.numCalls);
+        System.out.println("num calls: ");
         System.out.println("num cliques size >= 3: " + cliques.size());
         
         Path path = Paths.get(DOWNLOADS_DIR, filename);

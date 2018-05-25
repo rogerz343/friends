@@ -288,20 +288,80 @@ public class Graphs {
             }
         }
     }
+    
+    /**
+     * Finds all maximal cliques with size at least {@code minSize} in the given graph
+     * containing the specified node.
+     * @param g The graph.
+     * @param v The node that is included in all returned maximal cliques.
+     * @param minSize The minimum size of a maximal clique that is returned. This will be set
+     * to 3 if the given value is less than 3.
+     * @return A list of maximal cliques in the graph that contain the specified node, sorted
+     * in descending order by their size, where each clique is represented as a list of nodes.
+     * This method uses the Bron-Kerbosch algorithm and pivoting.
+     */
+    public static <V> List<List<V>> maximalCliquesContaining(Graph<V> g, V v, int minSize) {
+    	minSize = Math.max(minSize, 3);
+    	
+    	// create a copy of the subgraph induced on v and its neighbors
+    	Map<V, List<V>> subgraph = new HashMap<>();
+    	subgraph.put(v, new ArrayList<>());
+    	List<V> curr = subgraph.get(v);
+    	for (V neighbor : g.adjList.get(v)) {
+    		subgraph.put(neighbor, new ArrayList<>());
+    		curr.add(neighbor);
+    		subgraph.get(neighbor).add(v);
+    	}
+    	for (V a : subgraph.get(v)) {
+    		for (V b : g.adjList.get(a)) {
+    			if (subgraph.containsKey(b)) {
+	    			if (!subgraph.get(a).contains(b)) { subgraph.get(a).add(b); }
+	    			if (!subgraph.get(b).contains(a)) { subgraph.get(b).add(a); }
+    			}
+    		}
+    	}
+    	
+    	// TESTING SECTION
+    	
+    	int numEdges = 0;
+        for (List<V> l : subgraph.values()) {
+            numEdges += l.size();
+        }
+        numEdges /= 2;
+    	System.out.println("Induced subgraph nodes: " + subgraph.size());
+    	System.out.println("Induced subgraph edges: " + numEdges);
+    	
+    	// END OF TESTING SECTION
+    	
+    	List<List<V>> maxCliques = new ArrayList<>();
+    	BronKerboschVertexOrdering(subgraph, maxCliques);
+    	List<List<V>> ans = new ArrayList<>();
+    	for (List<V> clique : maxCliques) {
+            if (clique.size() >= minSize) {
+                ans.add(new ArrayList<>(clique));
+            }
+        }
+    	maxCliques.sort((l1, l2) -> l2.size() - l1.size());
+    	return maxCliques;
+    }
 
     /**
      * Finds all maximal cliques in the given graph whose size is at least minSize and returns
-     * them in descending order of their size.
-     * @param minSize the minimum size of a maximal clique that is returned.
+     * them in descending order of their size. Note: this method may take a very long time to
+     * run. If possible, use {@link maximalCliquesContaining} instead.
+     * @param minSize The minimum size of a maximal clique that is returned. This will be set
+     * to 3 if the given value is less than 3.
      * @return A list of maximal cliques in the graph sorted in descending order by their
      * size, where each clique is represented as a list of nodes.
      * This method uses the Bron-Kerbosch algorithm with vertex ordering and pivoting.
      */
-    public static <V> List<List<V>> getMaximalCliques(Graph<V> graph, int minSize) {
-        List<List<V>> allMaxCliques = new ArrayList<>();
+    public static <V> List<List<V>> allMaximalCliques(Graph<V> graph, int minSize) {
+    	minSize = Math.max(minSize, 3);
+        
+    	List<List<V>> allMaxCliques = new ArrayList<>();
         BronKerboschVertexOrdering(graph.adjList, allMaxCliques);
         List<List<V>> ans = new ArrayList<>();
-        for (List<V> clique : ans) {
+        for (List<V> clique : allMaxCliques) {
             if (clique.size() >= minSize) {
                 ans.add(new ArrayList<>(clique));
             }

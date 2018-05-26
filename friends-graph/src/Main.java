@@ -3,12 +3,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * friends
@@ -18,8 +17,12 @@ import java.util.stream.Collectors;
  */
 public class Main {
     
-    static String DOWNLOADS_DIR = "D:\\Robin Zhang\\Downloads\\";
-    static String OUTPUT_DIR = "D:\\Robin Zhang\\Desktop\\large borg desktop\\save\\";
+    // FOR TESTING (personal information about others removed for github)
+    static Person ROOT_PERSON = 
+    static Person TEST_PERSON = 
+    
+    static String DOWNLOADS_DIR = 
+    static String OUTPUT_DIR = 
     
     // TODO: add a GUI
     public static void main(String[] args) throws AWTException, IOException {
@@ -28,29 +31,54 @@ public class Main {
         
         // runHarvestAll();
         // resumeHarvest();
-        saveGraphInfo("roger-cliques.txt");
+        saveGraphInfo();
         
         long endTime = System.nanoTime();
         System.out.println("Program ran for " + ((endTime - startTime) / 1000000000) + " seconds.");
     }
     
-    public static void saveGraphInfo(String filename) throws IOException {
+    public static void saveGraphInfo() throws IOException {
         Graph<Person> graph = loadIntoGraph(OUTPUT_DIR);
         System.out.println("Number of nodes: " + graph.numNodes());
         System.out.println("Number of edges: " + graph.numEdges());
-        List<List<Person>> cliques = Graphs.allMaximalCliques(graph, 1);
         
-        System.out.println("num calls: ");
-        System.out.println("num cliques size >= 3: " + cliques.size());
+
         
-        Path path = Paths.get(DOWNLOADS_DIR, filename);
-        path = Files.createFile(path);
+        // SUGGESTED FRIENDS
         
-        List<String> lines =
-                cliques.stream()
-                .map(c -> c.toString())
-                .collect(Collectors.toCollection(ArrayList<String>::new));
-        Files.write(path, lines);
+        List<Person> suggested = Graphs.suggestedFriendsFor(graph, ROOT_PERSON, 20);
+        Path path = Paths.get(DOWNLOADS_DIR, "r_suggested.txt");
+        Files.write(path, suggested.toString().getBytes(),
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE);
+        
+        // MUTUAL FRIENDS
+        
+//        List<Person> mf = Graphs.mutualFriends(graph, ROOT_PERSON, TEST_PERSON);
+//        Path path = Paths.get(DOWNLOADS_DIR, "r_t_mutual.txt");
+//        Files.write(path, mf.toString().getBytes(),
+//                StandardOpenOption.CREATE,
+//                StandardOpenOption.TRUNCATE_EXISTING,
+//                StandardOpenOption.WRITE);
+        
+        // CLIQUES
+        
+//        List<List<Person>> cliques = Graphs.maximalCliquesContaining(graph, ROOT_PERSON, 3);
+//        System.out.println("num cliques size >= 3: " + cliques.size());
+//        
+//        // make the file not too large
+//        List<List<Person>> top10 = new ArrayList<>();
+//        for (int i = 0; i < 10; i++) {
+//            top10.add(cliques.get(i));
+//        }
+//        
+//        List<String> lines =
+//                top10.stream()
+//                .map(c -> c.toString())
+//                .collect(Collectors.toCollection(ArrayList<String>::new));
+//        Path path = Paths.get(DOWNLOADS_DIR, filename);
+//        Files.write(path, lines);
     }
     
     public static Graph<Person> loadIntoGraph(String dirpath) {

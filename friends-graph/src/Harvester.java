@@ -32,6 +32,10 @@ public class Harvester {
     // previous save file or brand new
     private boolean isNewHarvester;
     
+    // the user who was logged in during data collection, who is also the person
+    // whose facebook Friends page this Harvester started on
+    private Person rootPerson = null;
+    
     public final int maxNumPeople;
     public final int maxPerPerson;
     public final String downloadsDir;
@@ -61,10 +65,6 @@ public class Harvester {
     
     private static int EMPTY_SPACE_X = 200;
     private static int EMPTY_SPACE_Y = 300;  
-    
-    // time to wait for Windows to paste text to and from clipboard, in milliseconds
-    // not sure if we actually need this
-//    private static int WAIT_TIME_AFTER_CTRL_V = 500;
     
     /**
      * Constructs a brand new Harvester with the given parameters
@@ -115,12 +115,13 @@ public class Harvester {
         this.maxPerPerson = Integer.parseInt(lines.get(1));
         this.downloadsDir = lines.get(2);
         this.outputDir = lines.get(3);
+        this.rootPerson = Person.fromString(lines.get(4));
         logFilePath = Paths.get(outputDir, LOG_FILE).toString();
         
-        this.numDownloaded = Integer.parseInt(lines.get(4));
+        this.numDownloaded = Integer.parseInt(lines.get(5));
         
         int startLine;
-        int currLine = 5;
+        int currLine = 6;
         
         int numFinished = Integer.parseInt(lines.get(currLine));
         currLine++;
@@ -187,7 +188,7 @@ public class Harvester {
         List<Person> rootUserFriends;
         try {
             rootUserFriends = FriendsHtmlParser.extractFriendsInfo(rootUserHtmlPath.toString(),
-                    maxPerPerson, 30);
+                    maxPerPerson, 30, null);
         } catch (FileNotFoundException e2) {
             e2.printStackTrace();
             return false;
@@ -288,7 +289,7 @@ public class Harvester {
             List<Person> userFriends;
             try {
                 userFriends = FriendsHtmlParser.extractFriendsInfo(userHtmlPath.toString(),
-                        maxPerPerson, 30);
+                        maxPerPerson, 30, rootPerson);
             } catch (FileNotFoundException e) {
                 // could not open this user's profile: just skip this person
                 // without adding to finishedPeople
@@ -378,6 +379,8 @@ public class Harvester {
         lines.add(Integer.toString(maxPerPerson));
         lines.add(downloadsDir);
         lines.add(outputDir);
+        lines.add(rootPerson.toString());
+        
         lines.add(Integer.toString(numDownloaded));
         lines.add(Integer.toString(finishedPeople.size()));
         
@@ -439,7 +442,7 @@ public class Harvester {
      * @throws RobotInterruptedException 
      */
     public String harvestSingleFriendsPage() throws RobotInterruptedException {
-        scrollToBottom(100);
+        scrollToBottom(300);
         return fetchHtml();
     }
     
@@ -451,12 +454,8 @@ public class Harvester {
      * @throws RobotInterruptedException 
      */
     public String harvestSingleFriendsPage(Person person) throws RobotInterruptedException {
-        // close any potential open chrome dialogue
-//        robot.keyPress(KeyEvent.VK_ESCAPE);
-//        robot.keyRelease(KeyEvent.VK_ESCAPE);
-        
         viewFriendsPage(person);
-        scrollToBottom(100);
+        scrollToBottom(300);
         return fetchHtml();
     }
     
@@ -512,13 +511,7 @@ public class Harvester {
      * @return true if no error (including timeout) occurred, false otherwise.
      * @throws RobotInterruptedException 
      */
-    private boolean scrollToBottom(long timeout) throws RobotInterruptedException {
-        // make sure window is in focus
-        // TODO: commented out for now b/c it registers as a double click
-//        robot.mouseMove(EMPTY_SPACE_X, EMPTY_SPACE_Y);
-//        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-//        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        
+    private boolean scrollToBottom(long timeout) throws RobotInterruptedException {        
         long startTime = System.nanoTime();
         while ((System.nanoTime() - startTime) / 1000000000 < timeout) {
             robot.keyPress(KeyEvent.VK_PAGE_DOWN);

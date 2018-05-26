@@ -1,5 +1,5 @@
 # friends
-A program that fetches lets you fetch and analyze information about your facebook friends network. This program only retrieves information that the other user has made available to you (i.e. private information will not be obtained).
+A program that fetches lets you fetch and analyze information about your facebook friends network. This program only retrieves information that the other user has made available to you (so that private information will not be obtained).
 
 ## Usage
 ### Setup
@@ -9,6 +9,7 @@ A program that fetches lets you fetch and analyze information about your faceboo
 - Google Chrome is maximized on screen.
 - The bookmarks bar is visible (ctrl-shift-b to toggle this).
 - The downloads bar is visible (download anything to make it visible, e.g. any website's html file).
+
 ### Running the code
 Specify:
 - The path to the location where files downloaded in Google Chrome are saved by default.
@@ -21,7 +22,8 @@ The program (currently) only runs correctly on Windows 10. Note that there could
 
 ## Files
 - `Person.java`: A class that stores various information about a person, such as `id`, `name`, and `url`.
-- `Graph.java`: A class that represents an undirected graph. Includes various graph operations and algorithms.
+- `Graph.java`: A class that represents an undirected graph.
+- `Graphs.java`: A class that contains functions and operations on `Graph`s.
 - `InterruptibleRobot.java`: A class that wraps/extends a `java.awt.Robot` such that it can be interrupted by manually moving the mouse.
 - `Harvester.java`: A class that is used to download the dynamically generated `.html` file of a facebook user's Friends page (with all friends loaded on the page), using an `InterruptibleRobot`.
 - `FriendsHtmlParser.java`: A class that is used to parse the `.html` Friends page that is obtained from `Harvester#beginNewHarvest()` and `Harvester#harvestAllPages`, extracting information such as a list of the user's friends.
@@ -32,18 +34,17 @@ The program (currently) only runs correctly on Windows 10. Note that there could
 - Many design choices made here may seem unoptimal, but were chosen given the restriction that facebook doesn't (to my knowledge as of now) allow access to other people's friends through an API and they also have some server-side prevention measures against automated information retrieval (ex: using a wget). Still, there are clearly better ways to implement some of this program's functionalities, but the current implementation is simple to understand (not dependent on any non-standard libraries) and "good enough".
 
 ## Development/testing/benchmarking notes: using i5-7400 (2 core 4 thread @ 3.00 GHz)
-### Harvester
+Functions not listed here are assumed to have run times at most on the order of a few seconds.
+### Harvester (bottlenecked by browser scrolling time)
 - `Harvester(maxNumPeople=350, maxPerPerson=2000)`: 34000 seconds (approx 9.4 hours)
 - `Harvester(maxNumPeople=250, maxPerPerson=100)`: 8440 seconds (approx 2.3 hours)
-### Finding Cliques: G = (V, E) and V = X ∪ Y and X ∩ Y = ∅, where X is the set of nodes that we have complete information about, and Delta is an (approximate) upper bound on the degree of any vertex in the graph.
+### Finding Cliques (bottlenecked by CPU speed)
+Here, we use the notation G = (V, E), with V = X ∪ Y and X ∩ Y = ∅, where X is the set of nodes that we have complete information about, and Delta is an (approximate) upper bound on the degree of any vertex in the graph.
 - `maximalCliquesContaining()` with `|X| = 440, |Y| = 0, |E| = 15000`
-  - num recursive calls:
-  - run time: 435 seconds
-  - num maximal cliques: 1131211
+  - run time: 350 seconds
+  - num maximal cliques of size >= 3: 1131211
   - maximum clique size: 46
 - `allMaximalCliques()` with `|X| = 450, |Y| = 181700, |E| = 298252, Delta = 2000`:
-  - time to process first 10000 nodes: 385 seconds
-  - time to process first 100000 nodes: 3924 seconds
   - time to process first 181000 nodes: 7549 seconds
   - time to process last 1000 nodes: [untested, manually terminated after 6 hours]
 - `allMaximalCliques()` with `|X| = 250, |Y| = 5660, |E| = 17600, Delta = 100`:

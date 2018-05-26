@@ -1,3 +1,4 @@
+package friends;
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.HeadlessException;
@@ -19,6 +20,9 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import irobot.IRWrapper;
+import irobot.RobotInterruptedException;
 
 /**
  * A class used to download html documents corresponding to a facebook user's "Friends" page,

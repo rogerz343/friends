@@ -1,3 +1,4 @@
+package irobot;
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.MouseInfo;

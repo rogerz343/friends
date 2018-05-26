@@ -1,3 +1,4 @@
+package friends;
 
 /**
  * Simple class representing a person, uniquely identified by `id` and `urlIdType` (together)

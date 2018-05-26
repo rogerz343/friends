@@ -1,3 +1,4 @@
+package irobot;
 
 /**
  * Thrown when an InterruptibleRobot is interrupted by user mouse movement.

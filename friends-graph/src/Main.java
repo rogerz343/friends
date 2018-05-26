@@ -9,6 +9,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import friends.FriendsFiles;
+import friends.Harvester;
+import friends.Person;
+import graph.Graph;
+import graph.Graphs;
+
 /**
  * friends
  * @author roger
@@ -18,11 +24,11 @@ import java.util.Map;
 public class Main {
     
     // FOR TESTING (personal information about others removed for github)
-    static Person ROOT_PERSON = 
-    static Person TEST_PERSON = 
+    static Person ROOT_PERSON =
+    static Person TEST_PERSON =
     
-    static String DOWNLOADS_DIR = 
-    static String OUTPUT_DIR = 
+    static String DOWNLOADS_DIR =
+    static String OUTPUT_DIR =
     
     // TODO: add a GUI
     public static void main(String[] args) throws AWTException, IOException {

@@ -1,0 +1,4 @@
+A list of short-term TODOs and ideas
+- finish find dense subgraph functions
+- add a gui/clean up main function
+- visualize the graph (use a library)

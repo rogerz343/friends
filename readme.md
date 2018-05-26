@@ -62,7 +62,7 @@ Here, we use the notation G = (V, E), with V = X ∪ Y and X ∩ Y = ∅, where 
 - During development, lots of bugs were observed relating to copying and pasting the incorrect Strings from clipboard. I suspect that it has to do with previous instances of `Harvester` and `InterruptibleRobot`s (or other `Robot`s) whose threads were not closed and thus continued to perform copy/paste operations while the current program was running. These can be seen on Windows Task Manager (as a running java binary).
 - Occasionally, the program may (for unknown reason) switch to downloading to Desktop, instead of Downloads folder, which prevents data collection from that point onwards. Current guess is that this happens when the Downloads folder becomes too large.
 
-## TODO, possible improvements
+## Possible improvements
 - Allow user to decide where to download .html files, and enforce this in the code.
 - Allow user to click on the screen where some (currently hardcoded) coordinates are (e.g. scroll bar bottom position).
 - Revamp file I/O to only use java's files and paths libraries (`java.nio.\*`)

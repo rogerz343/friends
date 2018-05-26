@@ -18,7 +18,7 @@ import java.util.List;
  * page .html file we are considering
  */
 public class FriendsHtmlParser {
-    
+        
     // the following String and char immediately precede and succeed (respectively) the
     // url of the source of the html file
     private static String PRECEDES_SOURCE_URL = ")";
@@ -65,13 +65,14 @@ public class FriendsHtmlParser {
      * is extracted in the order of whatever order facebook uses to display friends on a page.
      * @param maxReadAttempts The maximum number of attempts that this method will make to open the
      * file (at one attempt per second) before throwing an error.
+     * @param loggedInUser The Person who was logged in to facebook during data collection
      * @return A list of the input profile's friends (up to `maxToExtract`). Returns null if
      * an error occurred.
      * @throws FileNotFoundException If filepath could not be opened
      * 
      */
     public static List<Person> extractFriendsInfo(String filepath,
-            int maxToExtract, int maxReadAttempts)
+            int maxToExtract, int maxReadAttempts, Person loggedInUser)
             throws FileNotFoundException {
         File file = new File(filepath);
         
@@ -143,8 +144,10 @@ public class FriendsHtmlParser {
             if (!success && !isEOF(br)) {
                 // DIV_TAG2 will not appear if the profile block corresponds to the user who is
                 // logged in to facebook himself/herself. Thus, ...
-                // TODO: currently just assumes whoever is logged in myself (roger zhang)
-                result.add(new Person("Roger Zhang", "https://www.facebook.com/roger.zhang.5"));
+                if (loggedInUser == null) {
+                    loggedInUser = new Person("LOGGED_IN_USER", "https://facebook.com/null");
+                }
+                result.add(loggedInUser);
                 continue;
             }
             success = findString(br, PRECEDES_URL);

@@ -121,11 +121,12 @@ public class Graphs {
      * friends they have with u).
      */
     public static <V> List<V> suggestedFriendsFor(Graph<V> g, V u, int minMutualFriends) {
+        Set<V> friends = new HashSet<>(g.adjList.get(u));
         List<V> candidates = distanceDFrom(g, u, 2);
         List<NodeIntPair<V>> candidatesFiltered = new ArrayList<>();
         for (V v : candidates) {
-            List<V> mutualFriends = mutualFriendsOf(g, u, v);
-            if (mutualFriends.size() >= minMutualFriends) {
+            List<V> mutualFriends = mutualFriends(g, u, v);
+            if (!friends.contains(v) && mutualFriends.size() >= minMutualFriends) {
                 candidatesFiltered.add(new NodeIntPair<>(v, mutualFriends.size()));
             }
         }
@@ -142,7 +143,7 @@ public class Graphs {
      * @param w A node in the graph.
      * @return A list of nodes in the graph that are neighbors with both u and v.
      */
-    public static <V> List<V> mutualFriendsOf(Graph<V> g, V u, V w) {
+    public static <V> List<V> mutualFriends(Graph<V> g, V u, V w) {
         Set<V> uNeighbors = new HashSet<>();
         for (V uNeighbor : g.adjList.get(u)) {
             uNeighbors.add(uNeighbor);

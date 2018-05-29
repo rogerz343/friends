@@ -24,8 +24,8 @@ import graph.Graphs;
 public class Main {
     
     // FOR TESTING (personal information about others should be removed for github)
-    static Person ROOT_PERSON = new Person("Roger Zhang", "https://facebook.com/roger.zhang.5");
-    static Person TEST_PERSON = new Person("Tom Liu", "https://facebook.com/tongtianliu");
+    static Person ROOT_PERSON = 
+    static Person TEST_PERSON = 
     
     static String DOWNLOADS_DIR = "D:\\Robin Zhang\\Downloads\\";
     static String OUTPUT_DIR = "D:\\Robin Zhang\\Desktop\\large borg desktop\\save\\";

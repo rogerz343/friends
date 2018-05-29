@@ -16,6 +16,9 @@ import java.util.stream.Collectors;
  * 
  */
 public class Graphs {
+    
+    // used for calculations involving doubles
+    private static double EPSILON = 0.000000001;
 	
 	/**
      * Returns a list of all of the nodes that are exactly distance d away from source in the
@@ -167,37 +170,95 @@ public class Graphs {
      * @return The value of the maximum flow from the source to the sink.
      */
     public static <V> int maxFlow(Graph<V> g, V source, V sink) {
-    	Map<V, List<FlowEdge<V>>> residual = new HashMap<>();
-        return edmondsKarp(g.adjList, residual, source, sink);
+        return edmondsKarp(Graphs.toFlowNetwork(g), source, sink);
     }
-
-
-    public static <V> int highestDensitySubgraph(V s, V t) {
-        // temporarily add a source and sink
-        // TODO: finish this
-    	return 0;
+    
+    /**
+     * Finds the nodes which induce the highest density subgraph in the given
+     * graph.
+     * Implements the algorithm described in:
+     * https://www2.eecs.berkeley.edu/Pubs/TechRpts/1984/CSD-84-171.pdf
+     * @param graph The graph.
+     * @param s An arbitrary node that is NOT in {@code graph}.
+     * @param t Another arbitrary node that is NOT in {@code graph} (distinct from s).
+     * @return The nodes which induce the maximum density subgraph.
+     */
+    public static <V> List<V> highestDensitySubgraph(Graph<V> graph, V s, V t) {
+        double epsilon = 0.000000001;
+        
+        // initialize some parameters
+        double g = 1;
+        int m = graph.numEdges();
+        
+        // start algorithm
+        double l = 0;
+        double u = m;
+        List<V> V1 = new ArrayList<>();
+        while (u - l >= 1 - epsilon) {
+            g = (u + l) / 2;
+            Map<V, List<DoubleFlowEdge<V>>> flowGraph = constructN(graph, s, t, g);
+            List<List<V>> STCut = minSTCut(flowGraph, s, t);
+            List<V> S = STCut.get(0);
+            if (S.size() == 1 && S.get(0).equals(s)) {
+                u = g;
+            } else {
+                l = g;
+                S.remove(s);
+                V1 = S;
+            }
+        }
+        return V1;
+    }
+    
+    /**
+     * A helper method for {@code highestDensitySubgraph()} which constructs the flow network
+     * described in the algorithm found in
+     * https://www2.eecs.berkeley.edu/Pubs/TechRpts/1984/CSD-84-171.pdf.
+     * @return
+     */
+    private static <V> Map<V, List<DoubleFlowEdge<V>>> constructN(Graph<V> graph,
+            V s, V t, double g) {
+        int m = graph.numEdges();
+        
+        Map<V, List<DoubleFlowEdge<V>>> flowGraph = new HashMap<>();
+        List<DoubleFlowEdge<V>> sNeighbors = new ArrayList<>();
+        flowGraph.put(t, new ArrayList<>());
+        for (V v : graph.adjList.keySet()) {
+            flowGraph.put(v, new ArrayList<>());
+            sNeighbors.add(new DoubleFlowEdge<>(s, v, m, 0));
+        }
+        for (Map.Entry<V, List<V>> e : graph.adjList.entrySet()) {
+            V v = e.getKey();
+            List<DoubleFlowEdge<V>> neighbors = flowGraph.get(v);
+            for (V w : e.getValue()) {
+                neighbors.add(new DoubleFlowEdge<>(v, w, 1, 0));
+            }
+            neighbors.add(new DoubleFlowEdge<>(v, t, m + 2 * g - graph.outDegree(v), 0));
+        }
+        return flowGraph;
     }
 
     /**
-     * Finds the minimum s-t cut of the flow network.
-     * @param g The graph.
+     * Finds the minimum s-t cut of the flow network. After this algorithm terminates,
+     * adjList will have the flows of the final residual network.
+     * @param adjList The adjacency list of a flow network.
      * @param s A node in the graph.
      * @param t A node in the graph (distinct from t).
-     * @return The nodes for each of the two parts of the minimum cut (partition) of the graph.
+     * @return The nodes for each of the two parts of the minimum ST cut of the graph.
      * The returned {@code List} has size 2 and each part of the partition is a {@code List} of
      * nodes stored in the 0th and 1st indices of the returned {@code List}, respectively.
      * indices of the returned {@code List}
      */
-    public static <V> List<List<V>> minSTCut(Graph<V> g, V s, V t) {
-        Map<V, List<FlowEdge<V>>> residual = new HashMap<>();
-        edmondsKarp(g.adjList, residual, s, t);
+    private static <V> List<List<V>> minSTCut(Map<V, List<DoubleFlowEdge<V>>> adjList,
+            V s, V t) {
+        edmondsKarp(adjList, s, t);
         Set<V> discovered = new HashSet<>();
         discovered.add(s);
         Deque<V> queue = new ArrayDeque<>();
         queue.add(s);
         while (!queue.isEmpty()) {
             V curr = queue.remove();
-            for (FlowEdge<V> fe : residual.get(curr)) {
+            for (DoubleFlowEdge<V> fe : adjList.get(curr)) {
                 if (fe.capacity - fe.flow > 0) {
                     discovered.add(fe.node2);
                     queue.add(fe.node2);
@@ -206,7 +267,7 @@ public class Graphs {
         }
         List<V> partition1 = new ArrayList<>(discovered);
         List<V> partition2 = new ArrayList<>();
-        for (V v : g.nodes()) {
+        for (V v : adjList.keySet()) {
             if (!discovered.contains(v)) {
                 partition2.add(v);
             }
@@ -219,36 +280,24 @@ public class Graphs {
     
     /**
      * Performs the Edmonds-Karp variation of Ford-Fulkerson method using adjacency lists and
-     * returns the resulting max flow. The final residual network obtained is stored in
-     * {@code residual}.
-     * @param adjList The adjacency list for the graph.
-     * @param flowGraph The data structure to store the final residual network in.
+     * returns the resulting max flow. When the algorithm terminates, adjList will contain
+     * the final residual network.
+     * @param adjList The adjacency list for the flow network.
      * @param source The source node.
      * @param sink The sink node.
      * @return The maximum flow from {@code source} to {@code sink}.
      */
-    private static <V> int edmondsKarp(Map<V, List<V>> adjList, Map<V, List<FlowEdge<V>>> flowGraph, V source, V sink) {
-    	flowGraph.clear();
-    	
-        // create a copy of the adjacency list but with values for each edge's capacity and flow
-        for (Map.Entry<V, List<V>> e : adjList.entrySet()) {
-            List<FlowEdge<V>> edges = new ArrayList<>();
-            for (V node2 : e.getValue()) {
-                edges.add(new FlowEdge<>(e.getKey(), node2, 1, 0));
-            }
-            flowGraph.put(e.getKey(), edges);
-        }
-
+    private static <V> int edmondsKarp(Map<V, List<DoubleFlowEdge<V>>> adjList,
+            V source, V sink) {
         int flow = 0;
         
         while (true) {
-            // find shortest augmenting path (note that this is different from shortestPath())
             Map<V, V> parents = new HashMap<>();
             Deque<V> queue = new ArrayDeque<>();
             queue.add(source);
             while (!queue.isEmpty() && parents.get(sink) == null) {
                 V curr = queue.remove();
-                for (FlowEdge<V> fe : flowGraph.get(curr)) {
+                for (DoubleFlowEdge<V> fe : adjList.get(curr)) {
                     if (parents.get(fe.node2) == null && !fe.node2.equals(source)
                             && fe.capacity > fe.flow) {
                         parents.put(fe.node2, curr);
@@ -262,12 +311,12 @@ public class Graphs {
             
             // augment flow with the new augmenting path, if it exists
             if (parents.get(sink) != null) {
-                int pathFlow = Integer.MAX_VALUE;
-                List<FlowEdge<V>> pathEdges = new ArrayList<>();
+                double pathFlow = Integer.MAX_VALUE;
+                List<DoubleFlowEdge<V>> pathEdges = new ArrayList<>();
                 V curr = sink;
                 while (parents.get(curr) != null) {
                     V parent = parents.get(curr);
-                    for (FlowEdge<V> childEdge : flowGraph.get(parent)) {
+                    for (DoubleFlowEdge<V> childEdge : adjList.get(parent)) {
                         if (childEdge.node2.equals(curr)) {
                             pathFlow = Math.min(pathFlow, childEdge.capacity - childEdge.flow);
                             pathEdges.add(childEdge);
@@ -276,9 +325,9 @@ public class Graphs {
                     }
                     curr = parent;
                 }
-                for (FlowEdge<V> pathEdge : pathEdges) {
+                for (DoubleFlowEdge<V> pathEdge : pathEdges) {
                     pathEdge.flow += pathFlow;
-                    for (FlowEdge<V> reversedFe : flowGraph.get(pathEdge.node2)) {
+                    for (DoubleFlowEdge<V> reversedFe : adjList.get(pathEdge.node2)) {
                         if (reversedFe.node2.equals(pathEdge.node1)) {
                             reversedFe.flow -= pathFlow;
                         }
@@ -446,21 +495,19 @@ public class Graphs {
         }
     }
     
-    /**
-     * Represents a directed edge from {@code node1} to {@code node2} in a graph with flows.
-     * @param <V> The type of node in the graph.
-     */
-    private static class FlowEdge<V> {
-        public V node1;
-        public V node2;
-        public int capacity;
-        public int flow;
-        public FlowEdge(V node1, V node2, int capacity, int flow) {
-            this.node1 = node1;
-            this.node2 = node2;
-            this.capacity = capacity;
-            this.flow = flow;
+    private static <V> Map<V, List<DoubleFlowEdge<V>>> toFlowNetwork(Graph<V> g) {
+        Map<V, List<DoubleFlowEdge<V>>> network = new HashMap<>();
+        for (V u : g.adjList.keySet()) {
+            network.put(u, new ArrayList<>());
         }
+        for (Map.Entry<V, List<V>> e : g.adjList.entrySet()) {
+            V u = e.getKey();
+            List<DoubleFlowEdge<V>> neighbors = network.get(u);
+            for (V v : e.getValue()) {
+                neighbors.add(new DoubleFlowEdge<>(u, v, 1, 0));
+            }
+        }
+        return network;
     }
     
     /**
@@ -475,6 +522,24 @@ public class Graphs {
         public NodeIntPair(V node, int val) {
             this.node = node;
             this.val = val;
+        }
+    }
+    
+    /**
+     * Represents a directed edge from {@code node1} to {@code node2} in a graph with
+     * floating point flows.
+     * @param <V> The type of node in the graph.
+     */
+    static class DoubleFlowEdge<V> {
+        public V node1;
+        public V node2;
+        public double capacity;
+        public double flow;
+        public DoubleFlowEdge(V node1, V node2, double capacity, double flow) {
+            this.node1 = node1;
+            this.node2 = node2;
+            this.capacity = capacity;
+            this.flow = flow;
         }
     }
 }

@@ -85,6 +85,10 @@ public class Graph<V> {
     public List<V> neighbors(V u) {
         return new ArrayList<>(adjList.get(u));
     }
+    
+    public int outDegree(V u) {
+        return adjList.get(u).size();
+    }
 
     /**
      * Returns a copy of the adjacency lists of this graph.
@@ -158,9 +162,7 @@ public class Graph<V> {
     	adjList.get(u).remove(v);
     	adjList.get(v).remove(u);
     }
-    
-    public long nodesProcessedTopLevel = 0;
-    
+        
     /**
      * Returns the length of the shortest path between u and v (the number of edges in the path).
      * Identical to {@code Graphs.distance(this, u, v)}

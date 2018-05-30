@@ -11,11 +11,11 @@ A program that fetches lets you fetch and analyze information about your faceboo
 - The downloads bar is visible (download anything to make it visible, e.g. any website's html file).
 
 ### Running the code
-Specify:
+Specify (currently as the static instance variables in the `Main` class):
 - The path to the location where files downloaded in Google Chrome are saved by default.
 - The path to a directory where the outputs of this program will save to.
 - The maximum number of Friends pages to download.
-- [optional (?)] The maximum number of friends to retrieve for each person.
+- The maximum degree of each Person in the graph.
 
 ## Compatibility
 The program (currently) only runs correctly on Windows 10. Note that there could possibly be a bug with the `java.awt.Robot` class when running on Windows 10 when the display scaling is not at its default value (100% for most desktops and 125% for most laptops).

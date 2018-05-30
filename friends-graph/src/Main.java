@@ -27,8 +27,11 @@ public class Main {
     static Person ROOT_PERSON = 
     static Person TEST_PERSON = 
     
-    static String DOWNLOADS_DIR = "D:\\Robin Zhang\\Downloads\\";
-    static String OUTPUT_DIR = "D:\\Robin Zhang\\Desktop\\large borg desktop\\save\\";
+    // PARAMETERS FOR THIS PROGRAM
+    static String DOWNLOADS_DIR = 
+    static String OUTPUT_DIR = 
+    static int MAX_PAGES_TO_DOWNLOAD = 450;
+    static int MAX_PER_PERSON = Integer.MAX_VALUE;
     
     // TODO: add a GUI
     public static void main(String[] args) throws AWTException, IOException {
@@ -43,12 +46,15 @@ public class Main {
         System.out.println("Program ran for " + ((endTime - startTime) / 1000000000) + " seconds.");
     }
     
+    /**
+     * Call this function to compute various functions abou the graph. See {@link Graph} and
+     * {@link Graphs} to see what you can do with them.
+     * @throws IOException
+     */
     public static void saveGraphInfo() throws IOException {
         Graph<Person> graph = loadIntoGraph(OUTPUT_DIR);
         System.out.println("Number of nodes: " + graph.numNodes());
         System.out.println("Number of edges: " + graph.numEdges());
-        
-
         
         // SUGGESTED FRIENDS
         
@@ -59,7 +65,7 @@ public class Main {
                 StandardOpenOption.TRUNCATE_EXISTING,
                 StandardOpenOption.WRITE);
         
-        // MUTUAL FRIENDS
+        // MUTUAL FRIENDS (uncomment below to use)
         
 //        List<Person> mf = Graphs.mutualFriends(graph, ROOT_PERSON, TEST_PERSON);
 //        Path path = Paths.get(DOWNLOADS_DIR, "r_t_mutual.txt");
@@ -68,7 +74,7 @@ public class Main {
 //                StandardOpenOption.TRUNCATE_EXISTING,
 //                StandardOpenOption.WRITE);
         
-        // CLIQUES
+        // CLIQUES (uncomment below to use)
         
 //        List<List<Person>> cliques = Graphs.maximalCliquesContaining(graph, ROOT_PERSON, 3);
 //        System.out.println("num cliques size >= 3: " + cliques.size());
@@ -87,6 +93,12 @@ public class Main {
 //        Files.write(path, lines);
     }
     
+    /**
+     * Call this function with a directory to load all .friends files from that directory
+     * and put the data into a graph.
+     * @param dirpath The path to the directory containing the .friends files.
+     * @return The resulting friends graph.
+     */
     public static Graph<Person> loadIntoGraph(String dirpath) {
         List<List<Person>> adjLists = FriendsFiles.loadAllInDirectory(OUTPUT_DIR, false);
         Map<Person, List<Person>> adjList = new HashMap<>();
@@ -99,6 +111,12 @@ public class Main {
         return new Graph<Person>(adjList);
     }
 
+    /**
+     * Call this function to start downloading/gathering info from fb friends pages.
+     * To setup, make sure your own friends page is open on chrome.
+     * @return true if no error or interrupt occurred, false otherwise.
+     * @throws IOException
+     */
     public static boolean runHarvestAll() throws IOException {
         // give the user some time to set up the facebook page correctly
         try {
@@ -108,7 +126,7 @@ public class Main {
         }
         Harvester h;
         try {
-            h = new Harvester(450, 2000, DOWNLOADS_DIR, OUTPUT_DIR);
+            h = new Harvester(MAX_PAGES_TO_DOWNLOAD, MAX_PER_PERSON, DOWNLOADS_DIR, OUTPUT_DIR);
         } catch (AWTException e) {
             e.printStackTrace();
             System.out.println("Could not create Harvester");
@@ -117,6 +135,12 @@ public class Main {
         return h.beginNewHarvest();
     }
     
+    /**
+     * Call this function to resume the process of downloading pages which was initiated
+     * by {@code runHarvestAll()} or a previous call to {@code resumeHarvest()}.
+     * @return
+     * @throws IOException
+     */
     public static boolean resumeHarvest() throws IOException {
         // give the user some time to set up the facebook page correctly
         try {

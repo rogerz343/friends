@@ -67,7 +67,7 @@ public class FriendsHtmlParser {
      * @param maxReadAttempts The maximum number of attempts that this method will make to open the
      * file (at one attempt per second) before throwing an error.
      * @param loggedInUser The Person who was logged in to facebook during data collection
-     * @return A list of the input profile's friends (up to `maxToExtract`). Returns null if
+     * @return A list of the input profile's friends (up to {@code maxToExtract}). Returns null if
      * an error occurred.
      * @throws FileNotFoundException If filepath could not be opened
      * 
@@ -237,8 +237,8 @@ public class FriendsHtmlParser {
     
     /**
      * Advances the Reader's file pointer to the character after the last character
-     * in the first instance of `s` in the Reader if `s` is found. Advances the file pointer
-     * to the end of file if `s` is not found.
+     * in the first instance of {@code s} in the Reader if {@code s} is found. Advances the file pointer
+     * to the end of file if {@code s} is not found.
      * @param r The Reader
      * @param s The String to find in the Reader
      * @return true if the String s was found, false otherwise or an error occurred.
@@ -267,12 +267,12 @@ public class FriendsHtmlParser {
     }
     
     /**
-     * Reads characters from `r` until the `end` is found and returns the String that
-     * was built (excluding `end`). Also advances the file pointer to the character after
-     * `end`.
+     * Reads characters from {@code r} until the {@code end} is found and returns the String that
+     * was built (excluding {@code end}). Also advances the file pointer to the character after
+     * {@code end}.
      * @param r The Reader
      * @param end The char to read until.
-     * @return The substring from the current file pointer up until (but excluding) `end`.
+     * @return The substring from the current file pointer up until (but excluding) {@code end}.
      * Returns null if an error occurred (ex: end of file reached or IOException)
      */
     private static String readUntil(Reader r, char end) {

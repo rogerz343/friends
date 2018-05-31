@@ -1,7 +1,8 @@
 package friends;
 
 /**
- * Simple class representing a person, uniquely identified by `id` and `urlIdType` (together)
+ * Simple class representing a person. A person can be uniquely identified by
+ * either both the {@code id} and {@code urlIdType} or both the {@code name} and {@code baseUrl}
  * @author roger
  *
  */

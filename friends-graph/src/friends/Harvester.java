@@ -226,11 +226,11 @@ public class Harvester {
     /**
      * Performs a breadth-first search of your friends network, with the parameters specified
      * by the instance variables. A facebook profile page should be open on the screen when
-     * this method is called. For each Person in `downloadQueue`, this method downloads that
+     * this method is called. For each Person in {@code downloadQueue}, this method downloads that
      * person's Friends page (.html file). Then, this method will save a file (corresponding
-     * to that Person and his/her friends) to `outputDir`. The process is repeated for all of
+     * to that Person and his/her friends) to {@code outputDir}. The process is repeated for all of
      * this person's friends. The state of this Harvester is periodically saved as a file in
-     * `outputDir` so that it the data processing can be interrupted and resume later on.
+     * {@code outputDir} so that it the data processing can be interrupted and resume later on.
      * @return true if no error occurred, false otherwise.
      */
     public boolean harvestAllPages() {
@@ -362,7 +362,7 @@ public class Harvester {
     /**
      * An alias for the Harvester(String dir) constructor.
      * @param dir The parameter to pass into the Harvester(String dir) constructor.
-     * @return A new Harvester constructed using the `dir` parameter.
+     * @return A new Harvester constructed using the {@code dir} parameter.
      * @throws IOException 
      * @throws AWTException 
      */

@@ -22,10 +22,10 @@ public class Graph<V> {
     public Graph() {}
     
     /**
-     * Creates a graph with the nodes in `nodes` and the edges in `edges`
+     * Creates a graph with the nodes in {@code nodes} and the edges in {@code edges}
      * @param nodes A list of nodes.
      * @param edges A list of edges, each edge is an array of length 2. The
-     * endpoints of the edges to not have to be in `nodes`; they are be created
+     * endpoints of the edges to not have to be in {@code nodes}; they are be created
      * on the fly.
      */
     public Graph(List<V> nodes, List<V[]> edges)  {
@@ -46,7 +46,7 @@ public class Graph<V> {
     }
     
     /**
-     * Creates a graph with the adjacency list `inputAdjList`. If the adjacency
+     * Creates a graph with the adjacency list {@code inputAdjList}. If the adjacency
      * list contains a V that is not a key but in one of the List<V>, then it
      * will automatically be added as a node. Also ensures no duplicate edges.
      * @param inputAdjList The input adjacency list

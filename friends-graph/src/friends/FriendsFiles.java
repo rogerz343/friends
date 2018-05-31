@@ -43,8 +43,8 @@ public class FriendsFiles {
      * @param dirpath The path to the directory to load Friends files from.
      * @param readAllFiles Set to true if you want to read all files in the directory,
      * and false if you only want to read files that have a ".friends" extension.
-     * @return A list in which each element is a list of `Person`s, such that
-     * in the list of `Person`s, every Person other than the first one is a
+     * @return A list in which each element is a list of {@code Person}s, such that
+     * in the list of {@code Person}s, every Person other than the first one is a
      * friend of the first Person in the list. Returns null if dirpath
      * is not a directory.
      */
@@ -76,7 +76,7 @@ public class FriendsFiles {
      * "owner", and the rest of the Person's are the "owner"'s friends.
      * @param filepath The path to the file to save to.
      * @return false if the file already exists; true otherwise.
-     * @throws IllegalArgumentException if `people` is empty.
+     * @throws IllegalArgumentException if {@code people} is empty.
      * @throws IOException
      */
     public static boolean saveToFile(List<Person> people, String filepath) throws IOException {

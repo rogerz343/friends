@@ -5,9 +5,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import friends.FriendsFiles;
 import friends.Harvester;
@@ -56,14 +60,14 @@ public class Main {
         System.out.println("Number of nodes: " + graph.numNodes());
         System.out.println("Number of edges: " + graph.numEdges());
         
-        // SUGGESTED FRIENDS
+        // SUGGESTED FRIENDS (uncomment below to use)
         
-        List<Person> suggested = Graphs.suggestedFriendsFor(graph, ROOT_PERSON, 20);
-        Path path = Paths.get(DOWNLOADS_DIR, "r_suggested.txt");
-        Files.write(path, suggested.toString().getBytes(),
-                StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING,
-                StandardOpenOption.WRITE);
+//        List<Person> suggested = Graphs.suggestedFriendsFor(graph, ROOT_PERSON, 20);
+//        Path path = Paths.get(DOWNLOADS_DIR, "r_suggested.txt");
+//        Files.write(path, suggested.toString().getBytes(),
+//                StandardOpenOption.CREATE,
+//                StandardOpenOption.TRUNCATE_EXISTING,
+//                StandardOpenOption.WRITE);
         
         // MUTUAL FRIENDS (uncomment below to use)
         
@@ -76,21 +80,49 @@ public class Main {
         
         // CLIQUES (uncomment below to use)
         
-//        List<List<Person>> cliques = Graphs.maximalCliquesContaining(graph, ROOT_PERSON, 3);
-//        System.out.println("num cliques size >= 3: " + cliques.size());
-//        
-//        // make the file not too large
-//        List<List<Person>> top10 = new ArrayList<>();
-//        for (int i = 0; i < 10; i++) {
-//            top10.add(cliques.get(i));
-//        }
-//        
-//        List<String> lines =
-//                top10.stream()
-//                .map(c -> c.toString())
-//                .collect(Collectors.toCollection(ArrayList<String>::new));
-//        Path path = Paths.get(DOWNLOADS_DIR, filename);
-//        Files.write(path, lines);
+        List<List<Person>> cliques = Graphs.maximalCliquesContaining(graph, ROOT_PERSON, 3);
+        System.out.println("num cliques size >= 3: " + cliques.size());
+        
+        // filter out cliques that are very similar to cliques we already have
+        List<List<Person>> filtered = new ArrayList<>();
+        filtered.add(cliques.get(0));
+        for (int i = 1; i < cliques.size(); i++) {
+            List<Person> candidate = cliques.get(i);
+            Set<Person> candidatePeople = new HashSet<>();
+            for (Person p : candidate) {
+                candidatePeople.add(p);
+            }
+            boolean distinct = true;
+            for (int j = 0; j < filtered.size() && distinct; j++) {
+                List<Person> c = filtered.get(j);
+                int numSame = 0;
+                for (Person p : c) {
+                    if (candidatePeople.contains(p)) {
+                        numSame++;
+                    }
+                }
+                if (((double) numSame) / candidate.size() > 0.55) {
+                    distinct = false;
+                }
+            }
+            if (distinct) {
+                filtered.add(candidate);
+            }
+        }
+        cliques = filtered;
+        
+        // make the file not too large
+        List<List<Person>> top10 = new ArrayList<>();
+        for (int i = 0; i < 50; i++) {
+            top10.add(cliques.get(i));
+        }
+        
+        List<String> lines =
+                top10.stream()
+                .map(c -> c.toString())
+                .collect(Collectors.toCollection(ArrayList<String>::new));
+        Path path = Paths.get(DOWNLOADS_DIR, "r_cliquesv3.txt");
+        Files.write(path, lines);
     }
     
     /**

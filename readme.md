@@ -33,7 +33,7 @@ The program (currently) only runs correctly on Windows 10. Note that there could
 - More detail about how classes are implemented can be found in the source code.
 - Many design choices made here may seem unoptimal, but were chosen given the restriction that facebook doesn't (to my knowledge as of now) allow access to other people's friends through an API and they also have some server-side prevention measures against automated information retrieval (ex: using a wget). Still, there are clearly better ways to implement some of this program's functionalities, but the current implementation is simple to understand (not dependent on any non-standard libraries) and "good enough".
 
-## Development/testing/benchmarking notes: using i5-7400 (2 core 4 thread @ 3.00 GHz)
+## Testing/benchmarking notes using i5-7400 (2 core 4 thread @ 3.00 GHz)
 Functions not listed here are assumed to have run times at most on the order of a few seconds.
 ### Harvester (bottlenecked by browser scrolling time)
 - `Harvester(maxNumPeople=350, maxPerPerson=2000)`: 34000 seconds (approx 9.4 hours)
@@ -46,7 +46,7 @@ Here, we use the notation G = (V, E), with V = X ∪ Y and X ∩ Y = ∅, where 
   - maximum clique size: 46
 - `allMaximalCliques()` with `|X| = 450, |Y| = 181700, |E| = 298252, Delta = 2000`:
   - time to process first 181000 nodes: 7549 seconds
-  - time to process last 1000 nodes: [untested, manually terminated after 6 hours]
+  - time to process last 1000 nodes: [unknown: manually terminated after 6 hours]
 - `allMaximalCliques()` with `|X| = 250, |Y| = 5660, |E| = 17600, Delta = 100`:
   - num recursive calls: 35787174
   - run time: 237 seconds (2 seconds for first 5000 nodes + 235 seconds for remaining 660)
@@ -55,8 +55,8 @@ Here, we use the notation G = (V, E), with V = X ∪ Y and X ∩ Y = ∅, where 
   - maximum clique size: 37
 
 ### Storage
-- 250 small .html files along with the _files source folder: 3.5 GB
-- 350 near-complete .html files along with the _files source folder: 8 GB
+- 250 small .html files along with the \_files source folder: 3.5 GB
+- 350 complete .html files along with the \_files source folder: 8 GB
 
 ## Bugs
 - During development, lots of bugs were observed relating to copying and pasting the incorrect Strings from clipboard. I suspect that it has to do with previous instances of `Harvester` and `InterruptibleRobot`s (or other `Robot`s) whose threads were not closed and thus continued to perform copy/paste operations while the current program was running. These can be seen on Windows Task Manager (as a running java binary).
